@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Lock, User, Eye, EyeOff, ShieldCheck, AlertCircle, ArrowRight, ShieldAlert } from 'lucide-react';
-import { NFT_LOGO_WHITE } from '../assets/logos';
+import { NFT_LOGO_LOGIN } from '../assets/loginLogo';
 import { authenticate, checkBruteForceLockout } from '../../auth/auth';
 
 export default function Login({ onLoginSuccess }) {
@@ -77,7 +77,7 @@ export default function Login({ onLoginSuccess }) {
           <div className="text-center space-y-4">
             <div className="flex justify-center py-1">
               <img
-                src={NFT_LOGO_WHITE}
+                src={NFT_LOGO_LOGIN}
                 alt="NFT Logistics"
                 className="h-10 sm:h-11 w-auto object-contain"
               />
