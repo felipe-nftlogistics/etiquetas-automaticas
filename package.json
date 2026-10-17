@@ -1,0 +1,23 @@
+{
+  "name": "etiquetas-nft-logistics",
+  "version": "1.0.0",
+  "description": "Sistema de Impressão de Etiquetas para Caixas de Comércio Exterior - NFT Logistics",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/plugin-react": "^6.0.0",
+    "jspdf": "^4.2.1",
+    "lucide-react": "^1.16.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "tailwindcss": "^4.3.3",
+    "vite": "^8.3.4",
+    "xlsx": "^0.18.5",
+    "zod": "^4.6.7"
+  }
+}

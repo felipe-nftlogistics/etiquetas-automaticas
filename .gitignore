@@ -1,0 +1,39 @@
+# Dependências
+node_modules/
+.pnp
+.pnp.js
+
+# Build & Produção
+dist/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Ambiente Local & Segredos
+.env*
+!.env.example
+.vercel/
+
+# IDEs e Editores
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Arquivos temporários e testes locais
+*.pdf
+preview_*.png
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+env/
+venv/

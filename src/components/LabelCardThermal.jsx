@@ -1,0 +1,149 @@
+import React from 'react';
+import { NFT_LOGO_FULL } from '../assets/logos';
+
+export default function LabelCardThermal({ item, operationType, isPrintMode = false }) {
+  const isImport = operationType === 'importacao';
+  const tipoCarga = (item.tipoCarga || 'Temporary').toUpperCase();
+
+  return (
+    <div 
+      className={`print-label-thermal relative bg-white border border-slate-300 flex flex-col justify-between overflow-hidden box-border select-none ${
+        isPrintMode 
+          ? 'w-[100mm] h-[150mm] p-[3.5mm]' 
+          : 'w-full max-w-[380px] aspect-[100/150] p-4 rounded-xl shadow-md mx-auto'
+      }`}
+      style={{
+        boxSizing: 'border-box',
+      }}
+    >
+      {/* ========================================================= */}
+      {/* 1. CABEÇALHO DISTRIBUÍDO: LOGO (LINHA 1) + REF (LINHA 2) */}
+      {/* ========================================================= */}
+      <div>
+        {/* Linha 1: Logo NFT Centralizado e com excelente respiro */}
+        <div className="flex items-center justify-center pt-0.5 pb-1.5">
+          <img
+            src={NFT_LOGO_FULL}
+            alt="NFT Logistics"
+            className="h-7 sm:h-8 w-auto object-contain"
+          />
+        </div>
+
+        {/* Linha 2: Caixa da Referência Interna em Destaque (Largura Total) */}
+        <div className="border-2 border-[#ea5b27] rounded-lg px-3 py-1 bg-white flex items-center justify-center w-full shadow-2xs">
+          <span className="text-xs sm:text-sm font-black text-slate-900 font-mono tracking-wider text-center">
+            {item.referencia || 'NFT-REF-0000'}
+          </span>
+        </div>
+
+        {/* Linha Divisória Marcante */}
+        <div className="w-full h-0.5 bg-slate-900 my-1.5" />
+      </div>
+
+      {/* ========================================================= */}
+      {/* 2. DADOS DO CLIENTE & EVENTO COM QUEBRA DE LINHA */}
+      {/* ========================================================= */}
+      <div className="space-y-1.5 py-0.5">
+        {/* Expositor */}
+        <div>
+          <span className="text-[7.5px] font-extrabold text-slate-500 uppercase tracking-wider block">
+            EXPOSITOR / EXHIBITOR (CLIENTE):
+          </span>
+          <h3 className="text-xs sm:text-[13px] font-black text-slate-900 uppercase leading-snug line-clamp-2">
+            {item.expositor || 'NOME DO EXPOSITOR'}
+          </h3>
+        </div>
+
+        {/* Feira ou Consignatário */}
+        {isImport ? (
+          <div className="space-y-0.5">
+            <div>
+              <span className="text-[7.5px] font-extrabold text-slate-500 uppercase tracking-wider block">
+                FEIRA / EVENTO (DESTINATION EVENT):
+              </span>
+              <span className="text-[11px] sm:text-xs font-black text-[#ea5b27] uppercase leading-tight block line-clamp-2">
+                {item.feira || 'FEIRA INTERNACIONAL'}
+              </span>
+            </div>
+            {item.estande && (
+              <div>
+                <span className="text-[8.5px] font-bold text-slate-800 line-clamp-1">
+                  ESTANDE / LOCAL: <strong className="text-slate-900">{item.estande}</strong>
+                </span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-0.5">
+            <div>
+              <span className="text-[7.5px] font-extrabold text-slate-500 uppercase tracking-wider block">
+                CONSIGNATÁRIO / CONSIGNEE (DESTINATÁRIO NO EXTERIOR):
+              </span>
+              <span className="text-[11px] sm:text-xs font-black text-slate-900 uppercase leading-tight block line-clamp-2">
+                {item.consignatario || 'DESTINATÁRIO INTERNACIONAL'}
+              </span>
+            </div>
+            {item.destino && (
+              <div>
+                <span className="text-[8.5px] font-bold text-[#ea5b27] line-clamp-1">
+                  DESTINO FINAL: <strong className="text-[#ea5b27] uppercase">{item.destino}</strong>
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Card de Observações / Notas */}
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-[8.5px]">
+          <span className="text-[7.5px] font-bold text-slate-500 uppercase block mb-0.5">
+            OBSERVAÇÕES / NOTAS:
+          </span>
+          <p className="text-[8.5px] text-slate-700 font-medium leading-relaxed line-clamp-2">
+            {item.observacoes || 'Sem observações adicionais'}
+          </p>
+        </div>
+      </div>
+
+      {/* ========================================================= */}
+      {/* 3. DESTAQUE CENTRAL: STATUS DA CARGA */}
+      {/* ========================================================= */}
+      <div className="my-auto py-1 text-center w-full">
+        <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight uppercase leading-none">
+          {tipoCarga}
+        </h2>
+      </div>
+
+      {/* ========================================================= */}
+      {/* 4. PARTE INFERIOR: VOLUMES ALINHADOS AO BOTTOM */}
+      {/* ========================================================= */}
+      <div className="w-full">
+        <div className="text-[10px] sm:text-[11px] font-black text-slate-900 uppercase tracking-wider mb-1 px-0.5">
+          VOLUMES
+        </div>
+        <div className="grid grid-cols-11 items-center gap-1.5 sm:gap-2">
+          
+          {/* Box Volume Atual */}
+          <div className="col-span-5 border-2 border-slate-300 rounded-lg py-2 sm:py-2.5 text-center bg-white shadow-2xs">
+            <span className="text-3xl sm:text-[34px] font-black text-slate-900 leading-none">
+              {item.volumeAtual}
+            </span>
+          </div>
+
+          {/* "OF" Central */}
+          <div className="col-span-1 text-center font-black text-xs sm:text-sm text-slate-900">
+            OF
+          </div>
+
+          {/* Box Total Volumes */}
+          <div className="col-span-5 border-2 border-slate-300 rounded-lg py-2 sm:py-2.5 text-center bg-white shadow-2xs">
+            <span className="text-3xl sm:text-[34px] font-black text-slate-900 leading-none">
+              {item.totalVolumes}
+            </span>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  );
+}
