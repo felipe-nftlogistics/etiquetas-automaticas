@@ -54,7 +54,7 @@ export default function LabelCardThermal({ item, operationType, isPrintMode = fa
           </h3>
         </div>
 
-        {/* Feira ou Consignatário */}
+        {/* Feira ou Retorno Aberto para preenchimento manual */}
         {isImport ? (
           <div className="space-y-0.5">
             <div>
@@ -74,33 +74,44 @@ export default function LabelCardThermal({ item, operationType, isPrintMode = fa
             )}
           </div>
         ) : (
-          <div className="space-y-0.5">
-            <div>
-              <span className="text-[7.5px] font-extrabold text-slate-500 uppercase tracking-wider block">
-                CONSIGNATÁRIO / CONSIGNEE (DESTINATÁRIO NO EXTERIOR):
-              </span>
-              <span className="text-[11px] sm:text-xs font-black text-slate-900 uppercase leading-tight block line-clamp-2">
-                {item.consignatario || 'DESTINATÁRIO INTERNACIONAL'}
-              </span>
+          <div className="space-y-1 pt-0.5">
+            <span className="text-[8.5px] font-black text-[#ea5b27] uppercase tracking-wider block">
+              RETURN:
+            </span>
+            {/* Campo aberto para escrita à mão na feira (altura para 3 linhas) */}
+            <div className="w-full border-2 border-dashed border-slate-400 bg-white rounded-md p-1 min-h-[44px] flex flex-col justify-between">
+              <div className="w-full border-b border-slate-200 h-3"></div>
+              <div className="w-full border-b border-slate-200 h-3"></div>
+              <div className="w-full h-3"></div>
             </div>
-            {item.destino && (
-              <div>
-                <span className="text-[8.5px] font-bold text-[#ea5b27] line-clamp-1">
-                  DESTINO FINAL: <strong className="text-[#ea5b27] uppercase">{item.destino}</strong>
-                </span>
-              </div>
-            )}
           </div>
         )}
 
-        {/* Card de Observações / Notas */}
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-[8.5px]">
-          <span className="text-[7.5px] font-bold text-slate-500 uppercase block mb-0.5">
-            OBSERVAÇÕES / NOTAS:
-          </span>
-          <p className="text-[8.5px] text-slate-700 font-medium leading-relaxed line-clamp-2">
-            {item.observacoes || 'Sem observações adicionais'}
-          </p>
+        {/* Card de Observações / Notas com DTA e Nota Fiscal */}
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-[8.5px] flex flex-col justify-between">
+          <div>
+            <span className="text-[7.5px] font-bold text-slate-500 uppercase block mb-0.5">
+              OBSERVAÇÕES / NOTAS:
+            </span>
+            <p className="text-[8.5px] text-slate-700 font-medium leading-relaxed line-clamp-2">
+              {item.observacoes || 'Sem observações adicionais'}
+            </p>
+          </div>
+
+          {(item.dta || item.notaFiscal) && (
+            <div className="mt-1 pt-1 border-t border-slate-200/80 flex flex-wrap gap-1 text-[8px] font-mono">
+              {item.dta && (
+                <span className="bg-orange-100/80 text-orange-950 font-bold px-1 py-0.2 rounded">
+                  DTA: <span className="font-extrabold">{item.dta}</span>
+                </span>
+              )}
+              {item.notaFiscal && (
+                <span className="bg-blue-100/80 text-blue-950 font-bold px-1 py-0.2 rounded">
+                  NF: <span className="font-extrabold">{item.notaFiscal}</span>
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

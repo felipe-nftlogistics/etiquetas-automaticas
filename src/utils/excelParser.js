@@ -101,8 +101,10 @@ export function parseExcelFile(file, operationType) {
           const rawVolumes = findValue(['quantidade de volumes', 'qtd volumes', 'volumes', 'total volumes', 'volume', 'qtd', 'caixas', 'boxes', 'packages']);
           const referencia = findValue(['referencia interna', 'referencia', 'ref interna', 'ref nft', 'processo', 'ref', 'internal ref', 'process']);
           const observacoes = findValue(['observacoes', 'observacao', 'notas', 'notes', 'remarks', 'detalhes']);
-          const rawTipoCarga = findValue(['tipo de carga', 'tipo carga', 'tipo', 'status', 'categoria', 'category', 'regime', 'modalidade', 'condicao', 'condition', 'status central']);
+          const rawTipoCarga = findValue(['categoria', 'category', 'tipo de carga', 'tipo carga', 'tipo', 'status', 'regime', 'modalidade', 'condicao', 'condition', 'status central']);
           const tipoCarga = normalizeCargoType(rawTipoCarga);
+          const dta = findValue(['dta', 'numero dta', 'no dta', 'n dta', 'num dta', 'dta no']);
+          const notaFiscal = findValue(['nota fiscal', 'nf', 'numero nf', 'no nf', 'n nf', 'danfe', 'invoice', 'nota']);
 
           // Converte quantidade de volumes para número seguro (1 a 2000)
           let volumes = parseInt(rawVolumes, 10);
@@ -138,6 +140,8 @@ export function parseExcelFile(file, operationType) {
             consignatario: sanitizeInput(consignatario),
             destino: sanitizeInput(destino),
             observacoes: sanitizeInput(observacoes),
+            dta: sanitizeInput(dta),
+            notaFiscal: sanitizeInput(notaFiscal),
           };
         });
 
@@ -163,9 +167,11 @@ export function downloadExcelTemplate(operationType) {
       'Nome do Expositor',
       'Quantidade de Volumes',
       'Referencia Interna',
-      'Tipo de Carga',
+      'Categoria',
       'Nome da Feira',
       'Estande / Local',
+      'DTA',
+      'Nota Fiscal',
       'Observacoes'
     ];
     sampleData = [
@@ -173,59 +179,51 @@ export function downloadExcelTemplate(operationType) {
         'Nome do Expositor': 'Siemens Energy AG',
         'Quantidade de Volumes': 40,
         'Referencia Interna': 'NFT-2026-IMP-0104',
-        'Tipo de Carga': 'Temporary',
+        'Categoria': 'Temporary',
         'Nome da Feira': 'FEIMEC 2026',
         'Estande / Local': 'Pavilhão 3 - Stand D-120',
+        'DTA': '26/0123456-7',
+        'Nota Fiscal': '12345',
         'Observacoes': 'Equipamentos elétricos sensíveis'
       },
       {
         'Nome do Expositor': 'Bosch Rexroth Brasil',
         'Quantidade de Volumes': 12,
         'Referencia Interna': 'NFT-2026-IMP-0108',
-        'Tipo de Carga': 'Fragile',
+        'Categoria': 'Fragile',
         'Nome da Feira': 'EXPOMAFE 2026',
         'Estande / Local': 'Pavilhão 2 - Stand B-45',
+        'DTA': '26/0987654-3',
+        'Nota Fiscal': '',
         'Observacoes': 'Peças hidráulicas para demonstração'
-      },
-      {
-        'Nome do Expositor': 'Medtronic Health Tech',
-        'Quantidade de Volumes': 6,
-        'Referencia Interna': 'NFT-2026-IMP-0112',
-        'Tipo de Carga': 'Definitive',
-        'Nome da Feira': 'HOSPITALAR 2026',
-        'Estande / Local': 'Pavilhão Branco - Stand F-18',
-        'Observacoes': 'Material promocional e catálogos'
       }
     ];
     fileName = 'NFT_Logistics_Modelo_Importacao_Feira.xlsx';
   } else {
     headers = [
       'Nome do Expositor',
-      'Consignatario da Carga',
       'Quantidade de Volumes',
       'Referencia Interna',
-      'Tipo de Carga',
-      'Pais de Destino',
+      'Categoria',
+      'DTA',
       'Observacoes'
     ];
     sampleData = [
       {
         'Nome do Expositor': 'Siemens Energy AG',
-        'Consignatario da Carga': 'Siemens Energy Headquarters GmbH (Nuremberg, Germany)',
         'Quantidade de Volumes': 40,
         'Referencia Interna': 'NFT-2026-EXP-0104',
-        'Tipo de Carga': 'Temporary',
-        'Pais de Destino': 'Alemanha',
-        'Observacoes': 'Devolução de Admissão Temporária após FEIMEC'
+        'Categoria': 'Temporary',
+        'DTA': '26/0123456-7',
+        'Observacoes': 'Devolução após feira'
       },
       {
         'Nome do Expositor': 'Bosch Rexroth Brasil',
-        'Consignatario da Carga': 'Bosch Rexroth AG (Lohr am Main, Germany)',
         'Quantidade de Volumes': 12,
         'Referencia Interna': 'NFT-2026-EXP-0108',
-        'Tipo de Carga': 'Empty',
-        'Pais de Destino': 'Alemanha',
-        'Observacoes': 'Engradados e caixas vazias para retorno'
+        'Categoria': 'Empty',
+        'DTA': '',
+        'Observacoes': 'Caixas vazias'
       }
     ];
     fileName = 'NFT_Logistics_Modelo_Exportacao_Devolucao.xlsx';

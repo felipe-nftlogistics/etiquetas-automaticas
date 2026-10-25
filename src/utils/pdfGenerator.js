@@ -157,31 +157,32 @@ async function generateA4PDF(labelsData, operationType, onProgress) {
         doc.text(`ESTANDE / LOCAL: ${item.estande}`.slice(0, 48), originX + 4, afterFeiraY);
       }
     } else {
+      // Exportação: RETURN + Campo aberto para escrever à mão na feira (3 linhas)
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6.5);
-      doc.setTextColor(100, 116, 139);
-      doc.text('CONSIGNATÁRIO / CONSIGNEE (DESTINATÁRIO NO EXTERIOR):', originX + 4, afterExpY);
+      doc.setFontSize(7.5);
+      doc.setTextColor(234, 91, 39);
+      doc.text('RETURN:', originX + 4, afterExpY);
 
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(15, 23, 42);
-      const consignatarioLines = doc.splitTextToSize((item.consignatario || 'DESTINATÁRIO INTERNACIONAL').toUpperCase(), 124);
-      doc.text(consignatarioLines[0], originX + 4, afterExpY + 4.2);
-      let afterConsY = afterExpY + 8;
-      if (consignatarioLines[1]) {
-        doc.text(consignatarioLines[1], originX + 4, afterExpY + 8.2);
-        afterConsY = afterExpY + 12;
-      }
+      const retBoxX = originX + 4;
+      const retBoxY = afterExpY + 1.5;
+      const retBoxW = 124;
+      const retBoxH = 14;
 
-      if (item.destino) {
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8.5);
-        doc.setTextColor(234, 91, 39);
-        doc.text(`DESTINO FINAL: ${item.destino.toUpperCase()}`.slice(0, 44), originX + 4, afterConsY);
-      }
+      doc.setDrawColor(148, 163, 184);
+      doc.setFillColor(255, 255, 255);
+      doc.setLineWidth(0.35);
+      doc.setLineDashPattern([2, 2], 0);
+      doc.roundedRect(retBoxX, retBoxY, retBoxW, retBoxH, 1.5, 1.5, 'FD');
+
+      // 2 Linhas pautadas internas para guiar escrita à mão
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.2);
+      doc.line(retBoxX + 2, retBoxY + 4.6, retBoxX + retBoxW - 2, retBoxY + 4.6);
+      doc.line(retBoxX + 2, retBoxY + 9.2, retBoxX + retBoxW - 2, retBoxY + 9.2);
+      doc.setLineDashPattern([], 0); // reseta
     }
 
-    // Coluna Direita: Card de Observações / Notas (Regime Aduaneiro removido)
+    // Coluna Direita: Card de Observações / Notas com DTA e Nota Fiscal
     const cardX = originX + contentWidth - 64;
     const cardY = infoY + 1;
     const cardW = 60;
@@ -193,17 +194,28 @@ async function generateA4PDF(labelsData, operationType, onProgress) {
     doc.roundedRect(cardX, cardY, cardW, cardH, 2, 2, 'FD');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
+    doc.setFontSize(6.5);
     doc.setTextColor(100, 116, 139);
-    doc.text('OBSERVAÇÕES / NOTAS:', cardX + 3, cardY + 5);
+    doc.text('OBSERVAÇÕES / NOTAS:', cardX + 3, cardY + 4.2);
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
+    doc.setFontSize(7);
     doc.setTextColor(51, 65, 85);
     const obsLines = doc.splitTextToSize(item.observacoes || 'Sem observações adicionais', cardW - 6);
-    doc.text(obsLines[0] || '', cardX + 3, cardY + 9.5);
-    if (obsLines[1]) {
-      doc.text(obsLines[1], cardX + 3, cardY + 13.5);
+    doc.text(obsLines[0] || '', cardX + 3, cardY + 8);
+    if (obsLines[1] && (!item.dta && !item.notaFiscal)) {
+      doc.text(obsLines[1], cardX + 3, cardY + 11.5);
+    }
+
+    // Linha de DTA e NF dentro do card de observações
+    if (item.dta || item.notaFiscal) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6.5);
+      doc.setTextColor(15, 23, 42);
+      let extraText = '';
+      if (item.dta) extraText += `DTA: ${item.dta}   `;
+      if (item.notaFiscal) extraText += `NF: ${item.notaFiscal}`;
+      doc.text(extraText.trim(), cardX + 3, cardY + 17.5);
     }
 
     // ==========================================
@@ -416,28 +428,29 @@ async function generateThermal10x15PDF(labelsData, operationType, onProgress) {
         doc.text(`ESTANDE / LOCAL: ${item.estande}`.slice(0, 48), originX + 3, afterFeiraY);
       }
     } else {
+      // Exportação Térmica: RETURN + Caixa de escrita à mão na feira (3 linhas)
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6.5);
-      doc.setTextColor(100, 116, 139);
-      doc.text('CONSIGNATÁRIO / CONSIGNEE (EXTERIOR):', originX + 3, nextY);
+      doc.setFontSize(7);
+      doc.setTextColor(234, 91, 39);
+      doc.text('RETURN:', originX + 3, nextY);
 
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.5);
-      doc.setTextColor(15, 23, 42);
-      const consignatarioLines = doc.splitTextToSize((item.consignatario || 'DESTINATÁRIO INTERNACIONAL').toUpperCase(), contentWidth - 6);
-      doc.text(consignatarioLines[0] || '', originX + 3, nextY + 3.6);
-      let afterConsY = nextY + 7.2;
-      if (consignatarioLines[1]) {
-        doc.text(consignatarioLines[1], originX + 3, nextY + 7.1);
-        afterConsY = nextY + 10.5;
-      }
+      const retBoxX = originX + 3;
+      const retBoxY = nextY + 1.2;
+      const retBoxW = contentWidth - 6;
+      const retBoxH = 12.5;
 
-      if (item.destino) {
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7.5);
-        doc.setTextColor(234, 91, 39);
-        doc.text(`DESTINO FINAL: ${item.destino.toUpperCase()}`.slice(0, 42), originX + 3, afterConsY);
-      }
+      doc.setDrawColor(148, 163, 184);
+      doc.setFillColor(255, 255, 255);
+      doc.setLineWidth(0.35);
+      doc.setLineDashPattern([2, 2], 0);
+      doc.roundedRect(retBoxX, retBoxY, retBoxW, retBoxH, 1.5, 1.5, 'FD');
+
+      // 2 Linhas pautadas internas
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.2);
+      doc.line(retBoxX + 2, retBoxY + 4.1, retBoxX + retBoxW - 2, retBoxY + 4.1);
+      doc.line(retBoxX + 2, retBoxY + 8.2, retBoxX + retBoxW - 2, retBoxY + 8.2);
+      doc.setLineDashPattern([], 0); // reseta
     }
 
     // Card de Observações / Notas
@@ -454,15 +467,25 @@ async function generateThermal10x15PDF(labelsData, operationType, onProgress) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(6);
     doc.setTextColor(100, 116, 139);
-    doc.text('OBSERVAÇÕES / NOTAS:', cardX + 2.5, cardY + 3.8);
+    doc.text('OBSERVAÇÕES / NOTAS:', cardX + 2.5, cardY + 3.4);
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
+    doc.setFontSize(6.8);
     doc.setTextColor(51, 65, 85);
     const obsLines = doc.splitTextToSize(item.observacoes || 'Sem observações adicionais', cardW - 5);
-    doc.text(obsLines[0] || '', cardX + 2.5, cardY + 7.5);
-    if (obsLines[1]) {
-      doc.text(obsLines[1], cardX + 2.5, cardY + 11);
+    doc.text(obsLines[0] || '', cardX + 2.5, cardY + 6.8);
+    if (obsLines[1] && (!item.dta && !item.notaFiscal)) {
+      doc.text(obsLines[1], cardX + 2.5, cardY + 9.8);
+    }
+
+    if (item.dta || item.notaFiscal) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6);
+      doc.setTextColor(15, 23, 42);
+      let extraText = '';
+      if (item.dta) extraText += `DTA: ${item.dta}   `;
+      if (item.notaFiscal) extraText += `NF: ${item.notaFiscal}`;
+      doc.text(extraText.trim(), cardX + 2.5, cardY + 11.6);
     }
 
     // ==========================================

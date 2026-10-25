@@ -25,63 +25,11 @@ export default function Dashboard({ session, onLogout }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [pdfProgress, setPdfProgress] = useState(0);
 
-  // Seleciona o modo na tela inicial e carrega dados de exemplo iniciais para facilitar
+  // Seleciona o modo na tela inicial - sempre inicia com lista vazia conforme solicitado
   const handleSelectMode = (mode) => {
     setCurrentMode(mode);
     setActiveView('table');
-
-    // Inicializa com um exemplo real conforme solicitado pelo usuário (ex: expositor com 40 caixas)
-    if (mode === 'importacao') {
-      setShipments([
-        {
-          id: 'demo-1',
-          selected: true,
-          expositor: 'Siemens Energy AG',
-          volumes: 40,
-          referencia: 'NFT-2026-IMP-0104',
-          tipoCarga: 'Temporary',
-          feira: 'FEIMEC 2026',
-          estande: 'Pavilhão 3 - Stand D-120',
-          observacoes: 'Material para estande e mostruário de feira',
-        },
-        {
-          id: 'demo-2',
-          selected: true,
-          expositor: 'Bosch Rexroth Brasil',
-          volumes: 12,
-          referencia: 'NFT-2026-IMP-0108',
-          tipoCarga: 'Fragile',
-          feira: 'EXPOMAFE 2026',
-          estande: 'Pavilhão 2 - Stand B-45',
-          observacoes: 'Componentes mecânicos para demonstração',
-        },
-      ]);
-    } else {
-      setShipments([
-        {
-          id: 'demo-1',
-          selected: true,
-          expositor: 'Siemens Energy AG',
-          consignatario: 'Siemens Energy Headquarters GmbH (Nuremberg, Germany)',
-          volumes: 40,
-          referencia: 'NFT-2026-EXP-0104',
-          tipoCarga: 'Temporary',
-          destino: 'Alemanha',
-          observacoes: 'Devolução de Admissão Temporária após FEIMEC 2026',
-        },
-        {
-          id: 'demo-2',
-          selected: true,
-          expositor: 'Bosch Rexroth Brasil',
-          consignatario: 'Bosch Rexroth AG (Lohr am Main, Germany)',
-          volumes: 12,
-          referencia: 'NFT-2026-EXP-0108',
-          tipoCarga: 'Empty',
-          destino: 'Alemanha',
-          observacoes: 'Retorno de caixas e engradados vazios',
-        },
-      ]);
-    }
+    setShipments([]);
   };
 
   // Voltar para a tela inicial de seleção de operação
@@ -110,6 +58,8 @@ export default function Dashboard({ session, onLogout }) {
           consignatario: ship.consignatario || '',
           destino: ship.destino || '',
           observacoes: ship.observacoes || '',
+          dta: ship.dta || '',
+          notaFiscal: ship.notaFiscal || '',
           volumeAtual: v,
           totalVolumes: totalVol,
         });
