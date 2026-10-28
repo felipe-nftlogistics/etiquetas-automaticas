@@ -83,7 +83,7 @@ def desenhar_etiqueta_a5(c, origin_x, origin_y, dados, operacao, logo_full_path,
     c.setStrokeColor(COLOR_BORDER)
     c.setFillColor(colors.white)
     c.setLineWidth(0.8)
-    c.roundRect(box_x, box_y, box_w, box_h, mm_to_pt(2.5), fill=1, stroke=1)
+    # c.roundRect(box_x, box_y, box_w, box_h, mm_to_pt(2.5), fill=1, stroke=0)  # Borda removida para nao atrapalhar o corte
 
     # 2. TOPO: Logo Completo "nft_logo_completo-black.png" (esquerda) + Caixa REF Centralizada (direita)
     # (Removido o badge do centro conforme solicitado)
@@ -334,7 +334,7 @@ def desenhar_etiqueta_termica_10x15(c, origin_x, origin_y, dados, operacao, logo
     c.setStrokeColor(COLOR_BORDER)
     c.setFillColor(colors.white)
     c.setLineWidth(0.8)
-    c.roundRect(box_x, box_y, box_w, box_h, mm_to_pt(2.5), fill=1, stroke=1)
+    # c.roundRect(box_x, box_y, box_w, box_h, mm_to_pt(2.5), fill=1, stroke=0)  # Borda removida para nao atrapalhar o corte
 
     # 2. TOPO: Cabeçalho Distribuído - Logo (Linha 1) + Caixa REF (Linha 2)
     logo_w = mm_to_pt(48)
@@ -640,7 +640,7 @@ def gerar_pdf_etiquetas(caminho_excel, operacao='importacao', arquivo_saida=None
                 c.setStrokeColor(colors.HexColor('#94a3b8'))
                 c.setDash(3, 3)
                 c.setLineWidth(0.5)
-                c.line(mm_to_pt(4), meio_h_pt, page_w_pt - mm_to_pt(4), meio_h_pt)
+                # c.line(mm_to_pt(4), meio_h_pt, page_w_pt - mm_to_pt(4), meio_h_pt)  # Linha central removida
                 c.restoreState()
 
             desenhar_etiqueta_a5(c, origin_x, origin_y, dados, operacao, logo_full, logo_icon)

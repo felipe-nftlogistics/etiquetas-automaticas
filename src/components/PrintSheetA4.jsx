@@ -32,13 +32,6 @@ export default function PrintSheetA4({ topLabel, bottomLabel, operationType, she
       </div>
 
       {/* ======================================================== */}
-      {/* LINHA DE CORTE CENTRAL (GUIA DISCRETO NA METADE DA A4) */}
-      {/* ======================================================== */}
-      <div className="relative w-full h-0 flex items-center justify-center z-10">
-        <div className="absolute left-2 right-2 border-t border-dashed border-slate-300" />
-      </div>
-
-      {/* ======================================================== */}
       {/* METADE INFERIOR (ETIQUETA A5 - 148.5 mm de altura) */}
       {/* ======================================================== */}
       <div 
@@ -52,8 +45,8 @@ export default function PrintSheetA4({ topLabel, bottomLabel, operationType, she
             isPrintMode={true}
           />
         ) : (
-          <div className="w-full h-full border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center text-slate-300 p-6 text-center select-none">
-            <span className="text-xs font-bold uppercase tracking-wider">Espaço Vazio (Folha Impar)</span>
+          <div className="w-full h-full border border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center text-slate-300 p-6 text-center select-none">
+            <span className="text-xs font-bold uppercase tracking-wider">Espaço Vazio (Folha Ímpar)</span>
             <span className="text-[10px] text-slate-400 mt-1">Nenhuma etiqueta adicional para esta folha</span>
           </div>
         )}

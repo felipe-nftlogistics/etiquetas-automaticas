@@ -7,10 +7,10 @@ export default function LabelCardThermal({ item, operationType, isPrintMode = fa
 
   return (
     <div 
-      className={`print-label-thermal relative bg-white border border-slate-300 flex flex-col justify-between overflow-hidden box-border select-none ${
+      className={`print-label-thermal relative bg-white flex flex-col justify-between overflow-hidden box-border select-none ${
         isPrintMode 
           ? 'w-[100mm] h-[150mm] p-[3.5mm]' 
-          : 'w-full max-w-[380px] aspect-[100/150] p-4 rounded-xl shadow-md mx-auto'
+          : 'w-full max-w-[380px] aspect-[100/150] p-4 rounded-xl shadow-md border border-slate-200 mx-auto'
       }`}
       style={{
         boxSizing: 'border-box',
@@ -44,12 +44,12 @@ export default function LabelCardThermal({ item, operationType, isPrintMode = fa
       {/* 2. DADOS DO CLIENTE & EVENTO COM QUEBRA DE LINHA */}
       {/* ========================================================= */}
       <div className="space-y-1.5 py-0.5">
-        {/* Expositor */}
+        {/* Expositor com suporte a múltiplas linhas (ex: caracteres chineses + inglês) */}
         <div>
           <span className="text-[7.5px] font-extrabold text-slate-500 uppercase tracking-wider block">
             EXPOSITOR / EXHIBITOR (CLIENTE):
           </span>
-          <h3 className="text-xs sm:text-[13px] font-black text-slate-900 uppercase leading-snug line-clamp-2">
+          <h3 className="text-xs sm:text-[13px] font-black text-slate-900 uppercase leading-snug line-clamp-3 whitespace-pre-line">
             {item.expositor || 'NOME DO EXPOSITOR'}
           </h3>
         </div>

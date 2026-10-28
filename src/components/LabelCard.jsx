@@ -7,10 +7,10 @@ export default function LabelCard({ item, operationType, isPrintMode = false }) 
 
   return (
     <div 
-      className={`print-label-a5 relative bg-white border border-slate-300 flex flex-col justify-between overflow-hidden box-border select-none ${
+      className={`print-label-a5 relative bg-white flex flex-col justify-between overflow-hidden box-border select-none ${
         isPrintMode 
           ? 'w-[210mm] h-[148.5mm] p-[5mm]' 
-          : 'w-full aspect-[210/148.5] p-3 sm:p-4 rounded-xl shadow-md'
+          : 'w-full aspect-[210/148.5] p-3 sm:p-4 rounded-xl shadow-md border border-slate-200'
       }`}
       style={{
         boxSizing: 'border-box',
@@ -18,7 +18,6 @@ export default function LabelCard({ item, operationType, isPrintMode = false }) 
     >
       {/* ========================================================= */}
       {/* 1. CABEÇALHO: LOGO NFT COMPLETO (ESQ) + CAIXA REF CENTRALIZADA (DIR) */}
-      {/* (Removida a tarja de operação central conforme solicitado) */}
       {/* ========================================================= */}
       <div className="flex items-center justify-between gap-4 pb-2 pt-0.5">
         
@@ -50,12 +49,12 @@ export default function LabelCard({ item, operationType, isPrintMode = false }) 
         
         {/* Coluna Esquerda: Expositor & Evento/Destino (8 colunas) */}
         <div className="col-span-8 space-y-1">
-          {/* Expositor */}
+          {/* Expositor com suporte a múltiplas linhas (ex: caracteres chineses + inglês) */}
           <div>
             <span className="text-[8.5px] font-extrabold text-slate-500 uppercase tracking-wider block">
               EXPOSITOR / EXHIBITOR (CLIENTE):
             </span>
-            <h3 className="text-sm sm:text-base font-black text-slate-900 uppercase leading-snug line-clamp-2">
+            <h3 className="text-sm sm:text-base font-black text-slate-900 uppercase leading-snug line-clamp-3 whitespace-pre-line">
               {item.expositor || 'NOME DO EXPOSITOR'}
             </h3>
           </div>
@@ -126,8 +125,6 @@ export default function LabelCard({ item, operationType, isPrintMode = false }) 
 
       {/* ========================================================= */}
       {/* 3. DESTAQUE CENTRAL: "TEMPORARY", "DEFINITIVE", "EMPTY", "FULL", "FRAGILE" */}
-      {/* Pegando a largura toda da etiqueta, bem no centro, bem visível! */}
-      {/* (Subtítulo com logo e 'international logistics' removido a pedido) */}
       {/* ========================================================= */}
       <div className="my-auto py-2 text-center w-full">
         <h2 className="text-5xl sm:text-6xl font-black text-slate-900 tracking-tight uppercase leading-none">
@@ -137,7 +134,6 @@ export default function LabelCard({ item, operationType, isPrintMode = false }) 
 
       {/* ========================================================= */}
       {/* 4. PARTE INFERIOR: VOLUMES EM LARGURA TOTAL */}
-      {/* (Sem borda laranja externa, sem QR code, números maiores) */}
       {/* ========================================================= */}
       <div className="w-full">
         <div className="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-wider mb-1 px-0.5">
@@ -145,7 +141,7 @@ export default function LabelCard({ item, operationType, isPrintMode = false }) 
         </div>
         <div className="grid grid-cols-11 items-center gap-2 sm:gap-3">
           
-          {/* Box Volume Atual (Quase metade da largura) */}
+          {/* Box Volume Atual */}
           <div className="col-span-5 border-2 border-slate-300 rounded-xl py-2 sm:py-3.5 text-center bg-white shadow-2xs">
             <span className="text-4xl sm:text-5xl font-black text-slate-900 leading-none">
               {item.volumeAtual}
@@ -157,7 +153,7 @@ export default function LabelCard({ item, operationType, isPrintMode = false }) 
             OF
           </div>
 
-          {/* Box Total Volumes (Quase metade da largura) */}
+          {/* Box Total Volumes */}
           <div className="col-span-5 border-2 border-slate-300 rounded-xl py-2 sm:py-3.5 text-center bg-white shadow-2xs">
             <span className="text-4xl sm:text-5xl font-black text-slate-900 leading-none">
               {item.totalVolumes}
@@ -166,8 +162,6 @@ export default function LabelCard({ item, operationType, isPrintMode = false }) 
 
         </div>
       </div>
-
-      {/* Rodapé de conformidade aduaneira removido a pedido */}
 
     </div>
   );

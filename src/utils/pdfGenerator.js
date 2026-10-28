@@ -2,6 +2,62 @@ import { jsPDF } from 'jspdf';
 import { NFT_LOGO_FULL } from '../assets/logos';
 
 /**
+ * Cache em memória da fonte Unicode Base64 para evitar refetching em exportações sucessivas.
+ */
+let cachedFontBase64 = null;
+
+/**
+ * Carrega a fonte TrueType NotoSansSC-Bold com suporte a caracteres chineses,
+ * japoneses, cirílico, acentuações e caracteres ocidentais para o jsPDF.
+ */
+async function ensureUnicodeFont(doc) {
+  try {
+    if (!cachedFontBase64) {
+      let fontBuffer = null;
+
+      // 1. Tenta carregar do diretório público local
+      try {
+        const response = await fetch('/fonts/NotoSansSC-Bold.ttf');
+        if (response.ok) {
+          fontBuffer = await response.arrayBuffer();
+        }
+      } catch {
+        // Ignora erro local e tenta fallback
+      }
+
+      // 2. Fallback para Google Fonts CDN caso o arquivo local não responda
+      if (!fontBuffer) {
+        const fallbackUrl = 'https://fonts.gstatic.com/s/notosanssc/v41/k3kCo84MPvpLmixcA63oeAL7Iqp5IZJF9bmaGzjCnYxNavzT.ttf';
+        const fallbackRes = await fetch(fallbackUrl);
+        if (fallbackRes.ok) {
+          fontBuffer = await fallbackRes.arrayBuffer();
+        }
+      }
+
+      if (fontBuffer) {
+        const bytes = new Uint8Array(fontBuffer);
+        let binary = '';
+        const chunkSize = 16384;
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+          binary += String.fromCharCode.apply(null, bytes.subarray(i, Math.min(i + chunkSize, bytes.length)));
+        }
+        cachedFontBase64 = btoa(binary);
+      }
+    }
+
+    if (cachedFontBase64) {
+      doc.addFileToVFS('NotoSansSC-Bold.ttf', cachedFontBase64);
+      doc.addFont('NotoSansSC-Bold.ttf', 'NotoSansSC', 'normal');
+      doc.addFont('NotoSansSC-Bold.ttf', 'NotoSansSC', 'bold');
+      return 'NotoSansSC';
+    }
+  } catch (err) {
+    console.warn('Não foi possível carregar a fonte Unicode NotoSansSC, utilizando helvetica:', err);
+  }
+  return 'helvetica';
+}
+
+/**
  * Gera PDF de Etiquetas da NFT Logistics.
  * Suporta dois formatos:
  *  - 'a4': Padrão A4 (210 x 297 mm) contendo 2 etiquetas A5 por folha (210 x 148.5 mm).
@@ -17,6 +73,7 @@ export async function generateLabelsPDF(labelsData, operationType, onProgress, p
 
 /**
  * Gera PDF Padrão A4 com 2 etiquetas A5 por folha.
+ * Sem bordas externas ou centrais que atrapalhem o corte da guilhotina/tesoura.
  */
 async function generateA4PDF(labelsData, operationType, onProgress) {
   const doc = new jsPDF({
@@ -26,8 +83,10 @@ async function generateA4PDF(labelsData, operationType, onProgress) {
     compress: true,
   });
 
+  // Carrega e registra fonte universal com suporte a caracteres chineses e multilíngues
+  const fontName = await ensureUnicodeFont(doc);
+
   const pageWidth = 210;
-  const pageHeight = 297;
   const labelHeight = 148.5; // Metade da A4
   const marginX = 6;
   const marginY = 5;
@@ -51,25 +110,11 @@ async function generateA4PDF(labelsData, operationType, onProgress) {
     const originY = baseY + marginY;
     const originX = marginX;
 
-    // Desenha a linha de corte no meio da folha A4 quando estamos no topo
-    if (isTop) {
-      doc.setDrawColor(148, 163, 184);
-      doc.setLineDashPattern([3, 3], 0);
-      doc.setLineWidth(0.4);
-      doc.line(4, labelHeight, pageWidth - 4, labelHeight);
-      doc.setLineDashPattern([], 0); // reseta
-    }
+    // NOTA: Borda externa e linha de corte central foram removidas conforme solicitado
+    // para não interferir nem deixar marcas no corte das folhas A4 ao meio.
 
     // ==========================================
-    // 1. MOLDURA EXTERNA DA ETIQUETA A5
-    // ==========================================
-    doc.setDrawColor(203, 213, 225);
-    doc.setFillColor(255, 255, 255);
-    doc.setLineWidth(0.35);
-    doc.roundedRect(originX, originY, contentWidth, contentHeight, 2.5, 2.5, 'FD');
-
-    // ==========================================
-    // 2. CABEÇALHO (LOGO COMPLETO NFT + CAIXA REF CENTRALIZADA)
+    // 1. CABEÇALHO (LOGO COMPLETO NFT + CAIXA REF CENTRALIZADA)
     // ==========================================
     const headerY = originY + 2.5;
 
@@ -77,7 +122,7 @@ async function generateA4PDF(labelsData, operationType, onProgress) {
     try {
       doc.addImage(NFT_LOGO_FULL, 'PNG', originX + 4, headerY + 1.5, 58, 9.5);
     } catch {
-      doc.setFont('helvetica', 'bold');
+      doc.setFont(fontName, 'bold');
       doc.setFontSize(16);
       doc.setTextColor(18, 22, 31);
       doc.text('NFT LOGISTICS', originX + 4, headerY + 9);
@@ -94,14 +139,14 @@ async function generateA4PDF(labelsData, operationType, onProgress) {
     doc.setLineWidth(0.65);
     doc.roundedRect(refX, refY, refWidth, refHeight, 3, 3, 'FD');
 
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(fontName, 'bold');
     doc.setFontSize(18);
     doc.setTextColor(15, 23, 42);
     const refStr = String(item.referencia || 'NFT-REF-0000');
     doc.text(refStr, refX + refWidth / 2, refY + 9.5, { align: 'center' });
 
     // ==========================================
-    // 3. LINHA HORIZONTAL DIVISÓRIA (PRETA MARCANTE)
+    // 2. LINHA HORIZONTAL DIVISÓRIA (PRETA MARCANTE)
     // ==========================================
     const lineY = headerY + 16.5;
     doc.setDrawColor(18, 22, 31);
@@ -109,40 +154,49 @@ async function generateA4PDF(labelsData, operationType, onProgress) {
     doc.line(originX + 2, lineY, originX + contentWidth - 2, lineY);
 
     // ==========================================
-    // 4. DISTRIBUIÇÃO DAS INFORMAÇÕES DO CLIENTE E EVENTO
+    // 3. DISTRIBUIÇÃO DAS INFORMAÇÕES DO CLIENTE E EVENTO
     // ==========================================
     const isImport = operationType === 'importacao';
     const infoY = lineY + 1.5;
 
     // Coluna Esquerda: Expositor e Evento/Destino
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(fontName, 'bold');
     doc.setFontSize(6.8);
     doc.setTextColor(100, 116, 139);
     doc.text('EXPOSITOR / EXHIBITOR (CLIENTE):', originX + 4, infoY + 3.5);
 
-    const expositorText = (item.expositor || 'EXPOSITOR').toUpperCase();
-    doc.setFont('helvetica', 'bold');
-    const expositorFontSize = expositorText.length > 32 ? 11.5 : 13.5;
+    const expositorText = String(item.expositor || 'EXPOSITOR').toUpperCase();
+    doc.setFont(fontName, 'bold');
+    const expositorLines = doc.splitTextToSize(expositorText, 124);
+
+    let expositorFontSize = 13;
+    if (expositorLines.length > 2 || expositorText.length > 50) {
+      expositorFontSize = 10;
+    } else if (expositorLines.length === 2 || expositorText.length > 30) {
+      expositorFontSize = 11.5;
+    }
     doc.setFontSize(expositorFontSize);
     doc.setTextColor(15, 23, 42);
-    const expositorLines = doc.splitTextToSize(expositorText, 124);
-    doc.text(expositorLines[0], originX + 4, infoY + 8.5);
-    let afterExpY = infoY + 12.5;
-    if (expositorLines[1]) {
-      doc.text(expositorLines[1], originX + 4, infoY + 13);
-      afterExpY = infoY + 17;
+
+    const lineSpacing = expositorFontSize * 0.42;
+    const maxLines = Math.min(expositorLines.length, 3);
+    let curExpY = infoY + 8;
+    for (let l = 0; l < maxLines; l++) {
+      doc.text(expositorLines[l], originX + 4, curExpY);
+      curExpY += lineSpacing;
     }
+    const afterExpY = Math.max(curExpY + 1.5, infoY + 15);
 
     if (isImport) {
-      doc.setFont('helvetica', 'bold');
+      doc.setFont(fontName, 'bold');
       doc.setFontSize(6.5);
       doc.setTextColor(100, 116, 139);
       doc.text('FEIRA / EVENTO (DESTINATION EVENT):', originX + 4, afterExpY);
 
-      doc.setFont('helvetica', 'bold');
+      doc.setFont(fontName, 'bold');
       doc.setFontSize(10.5);
       doc.setTextColor(234, 91, 39);
-      const feiraLines = doc.splitTextToSize((item.feira || 'FEIRA INTERNACIONAL').toUpperCase(), 124);
+      const feiraLines = doc.splitTextToSize(String(item.feira || 'FEIRA INTERNACIONAL').toUpperCase(), 124);
       doc.text(feiraLines[0], originX + 4, afterExpY + 4.2);
       let afterFeiraY = afterExpY + 8;
       if (feiraLines[1]) {
@@ -151,14 +205,14 @@ async function generateA4PDF(labelsData, operationType, onProgress) {
       }
 
       if (item.estande) {
-        doc.setFont('helvetica', 'bold');
+        doc.setFont(fontName, 'bold');
         doc.setFontSize(8);
         doc.setTextColor(15, 23, 42);
         doc.text(`ESTANDE / LOCAL: ${item.estande}`.slice(0, 48), originX + 4, afterFeiraY);
       }
     } else {
       // Exportação: RETURN + Campo aberto para escrever à mão na feira (3 linhas)
-      doc.setFont('helvetica', 'bold');
+      doc.setFont(fontName, 'bold');
       doc.setFontSize(7.5);
       doc.setTextColor(234, 91, 39);
       doc.text('RETURN:', originX + 4, afterExpY);
@@ -193,15 +247,15 @@ async function generateA4PDF(labelsData, operationType, onProgress) {
     doc.setLineWidth(0.3);
     doc.roundedRect(cardX, cardY, cardW, cardH, 2, 2, 'FD');
 
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(fontName, 'bold');
     doc.setFontSize(6.5);
     doc.setTextColor(100, 116, 139);
     doc.text('OBSERVAÇÕES / NOTAS:', cardX + 3, cardY + 4.2);
 
-    doc.setFont('helvetica', 'normal');
+    doc.setFont(fontName, 'normal');
     doc.setFontSize(7);
     doc.setTextColor(51, 65, 85);
-    const obsLines = doc.splitTextToSize(item.observacoes || 'Sem observações adicionais', cardW - 6);
+    const obsLines = doc.splitTextToSize(String(item.observacoes || 'Sem observações adicionais'), cardW - 6);
     doc.text(obsLines[0] || '', cardX + 3, cardY + 8);
     if (obsLines[1] && (!item.dta && !item.notaFiscal)) {
       doc.text(obsLines[1], cardX + 3, cardY + 11.5);
@@ -209,7 +263,7 @@ async function generateA4PDF(labelsData, operationType, onProgress) {
 
     // Linha de DTA e NF dentro do card de observações
     if (item.dta || item.notaFiscal) {
-      doc.setFont('helvetica', 'bold');
+      doc.setFont(fontName, 'bold');
       doc.setFontSize(6.5);
       doc.setTextColor(15, 23, 42);
       let extraText = '';
@@ -219,33 +273,31 @@ async function generateA4PDF(labelsData, operationType, onProgress) {
     }
 
     // ==========================================
-    // 5. O DESTAQUE CENTRAL: "TEMPORARY", "DEFINITIVE", "EMPTY", "FULL" OU "FRAGILE"
+    // 4. DESTAQUE CENTRAL: "TEMPORARY", "DEFINITIVE", "EMPTY", "FULL" OU "FRAGILE"
     // ==========================================
     const statusText = (item.tipoCarga || 'Temporary').toUpperCase();
     const centerY = originY + 80;
 
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(fontName, 'bold');
     doc.setFontSize(50);
     doc.setTextColor(18, 22, 31);
     doc.text(statusText, originX + contentWidth / 2, centerY, { align: 'center' });
 
     // ==========================================
-    // 6. PARTE INFERIOR: VOLUMES LARGURA TOTAL ALINHADOS AO BOTTOM
-    // Margem inferior de 4mm, idêntica às margens laterais de 4mm
+    // 5. PARTE INFERIOR: VOLUMES LARGURA TOTAL ALINHADOS AO BOTTOM
     // ==========================================
     const volBoxX = originX + 4;
-    const volBoxWidth = contentWidth - 8; // 4mm de cada lado
+    const volBoxWidth = contentWidth - 8;
 
     const bGap = 18; // Espaço central para o "OF"
     const bW = (volBoxWidth - bGap) / 2;
     const bH = 29;
     
-    // Alinhado ao bottom com 4mm de distância da borda inferior
     const bottomMargin = 4;
     const bY = originY + contentHeight - bottomMargin - bH;
 
     // Título VOLUMES logo acima das caixas
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(fontName, 'bold');
     doc.setFontSize(12.5);
     doc.setTextColor(18, 22, 31);
     doc.text('VOLUMES', volBoxX + 1, bY - 2.5);
@@ -257,14 +309,14 @@ async function generateA4PDF(labelsData, operationType, onProgress) {
     doc.setLineWidth(0.45);
     doc.roundedRect(b1X, bY, bW, bH, 3, 3, 'FD');
 
-    // Número do Volume Atual AINDA MAIOR (40pt)
-    doc.setFont('helvetica', 'bold');
+    // Número do Volume Atual
+    doc.setFont(fontName, 'bold');
     doc.setFontSize(40);
     doc.setTextColor(15, 23, 42);
     doc.text(String(item.volumeAtual), b1X + bW / 2, bY + 20.5, { align: 'center' });
 
     // "OF" Central
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(fontName, 'bold');
     doc.setFontSize(16);
     doc.setTextColor(18, 22, 31);
     doc.text('OF', volBoxX + bW + bGap / 2, bY + 18.5, { align: 'center' });
@@ -276,8 +328,8 @@ async function generateA4PDF(labelsData, operationType, onProgress) {
     doc.setLineWidth(0.45);
     doc.roundedRect(b2X, bY, bW, bH, 3, 3, 'FD');
 
-    // Número do Total de Volumes AINDA MAIOR (40pt)
-    doc.setFont('helvetica', 'bold');
+    // Número do Total de Volumes
+    doc.setFont(fontName, 'bold');
     doc.setFontSize(40);
     doc.setTextColor(15, 23, 42);
     doc.text(String(item.totalVolumes), b2X + bW / 2, bY + 20.5, { align: 'center' });
@@ -301,6 +353,7 @@ async function generateA4PDF(labelsData, operationType, onProgress) {
 
 /**
  * Gera PDF Padrão 10cm x 15cm (100 x 150 mm) adaptado para impressoras térmicas (1 etiqueta por página).
+ * Sem moldura externa retangular nas bordas.
  */
 async function generateThermal10x15PDF(labelsData, operationType, onProgress) {
   // Inicializa o documento 100 x 150 mm Retrato
@@ -310,6 +363,8 @@ async function generateThermal10x15PDF(labelsData, operationType, onProgress) {
     format: [100, 150],
     compress: true,
   });
+
+  const fontName = await ensureUnicodeFont(doc);
 
   const pageWidth = 100;
   const pageHeight = 150;
@@ -331,16 +386,10 @@ async function generateThermal10x15PDF(labelsData, operationType, onProgress) {
     const originX = marginX;
     const originY = marginY;
 
-    // ==========================================
-    // 1. MOLDURA EXTERNA DA ETIQUETA TÉRMICA (10x15 cm)
-    // ==========================================
-    doc.setDrawColor(203, 213, 225);
-    doc.setFillColor(255, 255, 255);
-    doc.setLineWidth(0.35);
-    doc.roundedRect(originX, originY, contentWidth, contentHeight, 2, 2, 'FD');
+    // NOTA: Moldura externa foi removida para facilitar etiquetas pré-cortadas térmicas.
 
     // ==========================================
-    // 2. CABEÇALHO DISTRIBUÍDO: LOGO (LINHA 1) + CAIXA REF (LINHA 2)
+    // 1. CABEÇALHO DISTRIBUÍDO: LOGO (LINHA 1) + CAIXA REF (LINHA 2)
     // ==========================================
     // Linha 1: Logo NFT Centralizado
     const logoW = 48;
@@ -351,7 +400,7 @@ async function generateThermal10x15PDF(labelsData, operationType, onProgress) {
     try {
       doc.addImage(NFT_LOGO_FULL, 'PNG', logoX, logoY, logoW, logoH);
     } catch {
-      doc.setFont('helvetica', 'bold');
+      doc.setFont(fontName, 'bold');
       doc.setFontSize(13);
       doc.setTextColor(18, 22, 31);
       doc.text('NFT LOGISTICS', originX + contentWidth / 2, logoY + 6.5, { align: 'center' });
@@ -369,7 +418,7 @@ async function generateThermal10x15PDF(labelsData, operationType, onProgress) {
     doc.roundedRect(refX, refY, refW, refH, 2, 2, 'FD');
 
     const refStr = String(item.referencia || 'NFT-REF-0000');
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(fontName, 'bold');
     doc.setFontSize(refStr.length > 20 ? 10 : 13);
     doc.setTextColor(15, 23, 42);
     doc.text(refStr, refX + refW / 2, refY + 6.6, { align: 'center' });
@@ -381,39 +430,48 @@ async function generateThermal10x15PDF(labelsData, operationType, onProgress) {
     doc.line(originX + 2, lineY, originX + contentWidth - 2, lineY);
 
     // ==========================================
-    // 3. DISTRIBUIÇÃO DAS INFORMAÇÕES COM QUEBRA DE LINHA
+    // 2. DISTRIBUIÇÃO DAS INFORMAÇÕES COM QUEBRA DE LINHA
     // ==========================================
     const isImport = operationType === 'importacao';
     const infoY = lineY + 1.2;
 
-    // Expositor (com quebra em até 2 linhas)
-    doc.setFont('helvetica', 'bold');
+    // Expositor (com quebra em até 3 linhas)
+    doc.setFont(fontName, 'bold');
     doc.setFontSize(6.5);
     doc.setTextColor(100, 116, 139);
     doc.text('EXPOSITOR / EXHIBITOR (CLIENTE):', originX + 3, infoY + 3);
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9.5);
-    doc.setTextColor(15, 23, 42);
-    const expositorLines = doc.splitTextToSize((item.expositor || 'EXPOSITOR').toUpperCase(), contentWidth - 6);
-    doc.text(expositorLines[0] || '', originX + 3, infoY + 6.8);
-    let nextY = infoY + 10.5;
-    if (expositorLines[1]) {
-      doc.text(expositorLines[1], originX + 3, infoY + 10.3);
-      nextY = infoY + 13.8;
+    const expositorText = String(item.expositor || 'EXPOSITOR').toUpperCase();
+    doc.setFont(fontName, 'bold');
+    const expositorLines = doc.splitTextToSize(expositorText, contentWidth - 6);
+
+    let expFontSize = 9.5;
+    if (expositorLines.length > 2 || expositorText.length > 40) {
+      expFontSize = 8;
     }
+    doc.setFontSize(expFontSize);
+    doc.setTextColor(15, 23, 42);
+
+    const lineSpacing = expFontSize * 0.42;
+    const maxLines = Math.min(expositorLines.length, 3);
+    let curExpY = infoY + 6.8;
+    for (let l = 0; l < maxLines; l++) {
+      doc.text(expositorLines[l], originX + 3, curExpY);
+      curExpY += lineSpacing;
+    }
+    const nextY = Math.max(curExpY + 1.5, infoY + 13.5);
 
     // Feira ou Consignatário (com quebra em até 2 linhas)
     if (isImport) {
-      doc.setFont('helvetica', 'bold');
+      doc.setFont(fontName, 'bold');
       doc.setFontSize(6.5);
       doc.setTextColor(100, 116, 139);
       doc.text('FEIRA / EVENTO (DESTINATION EVENT):', originX + 3, nextY);
 
-      doc.setFont('helvetica', 'bold');
+      doc.setFont(fontName, 'bold');
       doc.setFontSize(9);
       doc.setTextColor(234, 91, 39);
-      const feiraLines = doc.splitTextToSize((item.feira || 'FEIRA INTERNACIONAL').toUpperCase(), contentWidth - 6);
+      const feiraLines = doc.splitTextToSize(String(item.feira || 'FEIRA INTERNACIONAL').toUpperCase(), contentWidth - 6);
       doc.text(feiraLines[0] || '', originX + 3, nextY + 3.6);
       let afterFeiraY = nextY + 7.2;
       if (feiraLines[1]) {
@@ -422,14 +480,14 @@ async function generateThermal10x15PDF(labelsData, operationType, onProgress) {
       }
 
       if (item.estande) {
-        doc.setFont('helvetica', 'bold');
+        doc.setFont(fontName, 'bold');
         doc.setFontSize(7.5);
         doc.setTextColor(15, 23, 42);
         doc.text(`ESTANDE / LOCAL: ${item.estande}`.slice(0, 48), originX + 3, afterFeiraY);
       }
     } else {
       // Exportação Térmica: RETURN + Caixa de escrita à mão na feira (3 linhas)
-      doc.setFont('helvetica', 'bold');
+      doc.setFont(fontName, 'bold');
       doc.setFontSize(7);
       doc.setTextColor(234, 91, 39);
       doc.text('RETURN:', originX + 3, nextY);
@@ -464,22 +522,22 @@ async function generateThermal10x15PDF(labelsData, operationType, onProgress) {
     doc.setLineWidth(0.3);
     doc.roundedRect(cardX, cardY, cardW, cardH, 2, 2, 'FD');
 
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(fontName, 'bold');
     doc.setFontSize(6);
     doc.setTextColor(100, 116, 139);
     doc.text('OBSERVAÇÕES / NOTAS:', cardX + 2.5, cardY + 3.4);
 
-    doc.setFont('helvetica', 'normal');
+    doc.setFont(fontName, 'normal');
     doc.setFontSize(6.8);
     doc.setTextColor(51, 65, 85);
-    const obsLines = doc.splitTextToSize(item.observacoes || 'Sem observações adicionais', cardW - 5);
+    const obsLines = doc.splitTextToSize(String(item.observacoes || 'Sem observações adicionais'), cardW - 5);
     doc.text(obsLines[0] || '', cardX + 2.5, cardY + 6.8);
     if (obsLines[1] && (!item.dta && !item.notaFiscal)) {
       doc.text(obsLines[1], cardX + 2.5, cardY + 9.8);
     }
 
     if (item.dta || item.notaFiscal) {
-      doc.setFont('helvetica', 'bold');
+      doc.setFont(fontName, 'bold');
       doc.setFontSize(6);
       doc.setTextColor(15, 23, 42);
       let extraText = '';
@@ -489,18 +547,18 @@ async function generateThermal10x15PDF(labelsData, operationType, onProgress) {
     }
 
     // ==========================================
-    // 4. DESTAQUE CENTRAL: STATUS DA CARGA (36pt)
+    // 3. DESTAQUE CENTRAL: STATUS DA CARGA (36pt)
     // ==========================================
     const statusText = (item.tipoCarga || 'Temporary').toUpperCase();
     const centerY = originY + 84;
 
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(fontName, 'bold');
     doc.setFontSize(36);
     doc.setTextColor(18, 22, 31);
     doc.text(statusText, originX + contentWidth / 2, centerY, { align: 'center' });
 
     // ==========================================
-    // 5. PARTE INFERIOR: VOLUMES ALINHADOS AO BOTTOM
+    // 4. PARTE INFERIOR: VOLUMES ALINHADOS AO BOTTOM
     // ==========================================
     const bottomMargin = 3.5;
     const bH = 30;
@@ -509,7 +567,7 @@ async function generateThermal10x15PDF(labelsData, operationType, onProgress) {
     const volBoxWidth = contentWidth - 5; // 88mm
 
     // Título VOLUMES
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(fontName, 'bold');
     doc.setFontSize(11);
     doc.setTextColor(18, 22, 31);
     doc.text('VOLUMES', volBoxX + 1, bY - 2.5);
@@ -525,13 +583,13 @@ async function generateThermal10x15PDF(labelsData, operationType, onProgress) {
     doc.roundedRect(b1X, bY, bW, bH, 2.5, 2.5, 'FD');
 
     // Número do Volume Atual (36pt)
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(fontName, 'bold');
     doc.setFontSize(36);
     doc.setTextColor(15, 23, 42);
     doc.text(String(item.volumeAtual), b1X + bW / 2, bY + 21, { align: 'center' });
 
     // "OF" Central
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(fontName, 'bold');
     doc.setFontSize(14);
     doc.setTextColor(18, 22, 31);
     doc.text('OF', volBoxX + bW + bGap / 2, bY + 19, { align: 'center' });
@@ -544,7 +602,7 @@ async function generateThermal10x15PDF(labelsData, operationType, onProgress) {
     doc.roundedRect(b2X, bY, bW, bH, 2.5, 2.5, 'FD');
 
     // Número do Total de Volumes (36pt)
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(fontName, 'bold');
     doc.setFontSize(36);
     doc.setTextColor(15, 23, 42);
     doc.text(String(item.totalVolumes), b2X + bW / 2, bY + 21, { align: 'center' });
