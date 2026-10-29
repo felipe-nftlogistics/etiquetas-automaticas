@@ -37,6 +37,11 @@ export default function ShipmentManager({
   // Formulário Manual (criação)
   const [manualForm, setManualForm] = useState({
     expositor: '',
+    consignee: '',
+    consigneeAddress: '',
+    exporter: '',
+    exporterAddress: '',
+    observacoesImportantes: '',
     volumes: 40,
     referencia: `NFT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
     tipoCarga: 'Temporary',
@@ -53,6 +58,11 @@ export default function ShipmentManager({
   const [editForm, setEditForm] = useState({
     id: '',
     expositor: '',
+    consignee: '',
+    consigneeAddress: '',
+    exporter: '',
+    exporterAddress: '',
+    observacoesImportantes: '',
     volumes: 1,
     referencia: '',
     tipoCarga: 'Temporary',
@@ -121,10 +131,14 @@ export default function ShipmentManager({
     setShipments(
       shipments.map((s) => {
         if (s.id === id) {
-          return {
+          const updated = {
             ...s,
             [field]: field === 'volumes' ? Math.max(1, parseInt(value, 10) || 1) : value,
           };
+          if (field === 'consignee') {
+            updated.expositor = value;
+          }
+          return updated;
         }
         return s;
       })
@@ -136,7 +150,12 @@ export default function ShipmentManager({
     setEditingItem(item);
     setEditForm({
       id: item.id,
-      expositor: item.expositor || '',
+      expositor: item.expositor || item.consignee || '',
+      consignee: item.consignee || item.expositor || '',
+      consigneeAddress: item.consigneeAddress || '',
+      exporter: item.exporter || '',
+      exporterAddress: item.exporterAddress || '',
+      observacoesImportantes: item.observacoesImportantes || '',
       volumes: item.volumes || 1,
       referencia: item.referencia || '',
       tipoCarga: item.tipoCarga || 'Temporary',
@@ -151,8 +170,9 @@ export default function ShipmentManager({
   // Salva alterações do popup de edição
   const handleSaveEdit = (e) => {
     e.preventDefault();
-    if (!editForm.expositor.trim()) {
-      alert('Por favor, informe o nome do expositor.');
+    const primaryName = isImport ? editForm.expositor.trim() : (editForm.consignee || editForm.expositor).trim();
+    if (!primaryName) {
+      alert(isImport ? 'Por favor, informe o nome do expositor.' : 'Por favor, informe o nome do Consignee.');
       return;
     }
 
@@ -161,14 +181,19 @@ export default function ShipmentManager({
         if (s.id === editForm.id) {
           return {
             ...s,
-            expositor: editForm.expositor.trim(),
+            expositor: primaryName,
+            consignee: isImport ? '' : primaryName,
+            consigneeAddress: isImport ? '' : editForm.consigneeAddress.trim(),
+            exporter: isImport ? '' : editForm.exporter.trim(),
+            exporterAddress: isImport ? '' : editForm.exporterAddress.trim(),
+            observacoesImportantes: isImport ? '' : editForm.observacoesImportantes.trim(),
             volumes: Math.max(1, parseInt(editForm.volumes, 10) || 1),
             referencia: editForm.referencia.trim(),
             tipoCarga: editForm.tipoCarga || 'Temporary',
             feira: editForm.feira.trim(),
             estande: editForm.estande.trim(),
             observacoes: editForm.observacoes.trim(),
-            dta: editForm.dta.trim(),
+            dta: isImport ? editForm.dta.trim() : '',
             notaFiscal: editForm.notaFiscal.trim(),
           };
         }
@@ -181,15 +206,21 @@ export default function ShipmentManager({
   // Submissão do formulário manual
   const handleAddManual = (e) => {
     e.preventDefault();
-    if (!manualForm.expositor.trim()) {
-      alert('Por favor, informe o nome do expositor.');
+    const primaryName = isImport ? manualForm.expositor.trim() : (manualForm.consignee || manualForm.expositor).trim();
+    if (!primaryName) {
+      alert(isImport ? 'Por favor, informe o nome do expositor.' : 'Por favor, informe o nome do Consignee.');
       return;
     }
 
     const newShipment = {
       id: `manual-${Date.now()}`,
       selected: true,
-      expositor: manualForm.expositor.trim(),
+      expositor: primaryName,
+      consignee: isImport ? '' : primaryName,
+      consigneeAddress: isImport ? '' : manualForm.consigneeAddress.trim(),
+      exporter: isImport ? '' : manualForm.exporter.trim(),
+      exporterAddress: isImport ? '' : manualForm.exporterAddress.trim(),
+      observacoesImportantes: isImport ? '' : manualForm.observacoesImportantes.trim(),
       volumes: Math.max(1, parseInt(manualForm.volumes, 10) || 1),
       referencia: manualForm.referencia.trim(),
       tipoCarga: manualForm.tipoCarga || 'Temporary',
@@ -198,7 +229,7 @@ export default function ShipmentManager({
       consignatario: '',
       destino: '',
       observacoes: manualForm.observacoes.trim(),
-      dta: manualForm.dta.trim(),
+      dta: isImport ? manualForm.dta.trim() : '',
       notaFiscal: manualForm.notaFiscal.trim(),
     };
 
@@ -208,6 +239,11 @@ export default function ShipmentManager({
     // Reseta form
     setManualForm({
       expositor: '',
+      consignee: '',
+      consigneeAddress: '',
+      exporter: '',
+      exporterAddress: '',
+      observacoesImportantes: '',
       volumes: 40,
       referencia: `NFT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
       tipoCarga: 'Temporary',
@@ -268,7 +304,7 @@ export default function ShipmentManager({
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition shadow-sm cursor-pointer"
             >
               <Plus className="w-4 h-4 text-orange-400" />
-              <span>Adicionar Expositor Manual</span>
+              <span>{isImport ? 'Adicionar Expositor Manual' : 'Adicionar Consignee Manual'}</span>
             </button>
           </div>
         </div>
@@ -389,13 +425,13 @@ export default function ShipmentManager({
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-100/70 text-[11px] font-extrabold text-slate-600 uppercase tracking-wider">
                   <th className="py-3 px-4 w-12 text-center">Sel.</th>
-                  <th className="py-3 px-4">Expositor / Cliente</th>
-                  {isImport && <th className="py-3 px-4">Feira / Estande</th>}
-                  {!isImport && <th className="py-3 px-4 w-44">Retorno (Feira)</th>}
+                  <th className="py-3 px-4">{isImport ? 'Expositor / Cliente' : 'Consignee & Endereço'}</th>
+                  <th className="py-3 px-4">{isImport ? 'Feira / Estande' : 'Exporter & Endereço'}</th>
                   <th className="py-3 px-3 w-36 text-center">Categoria</th>
+                  {!isImport && <th className="py-3 px-4 w-44">Obs. Importantes</th>}
                   <th className="py-3 px-4 w-28 text-center">Qtd Volumes</th>
                   <th className="py-3 px-4 w-36">Ref. Interna</th>
-                  <th className="py-3 px-4 w-28">DTA</th>
+                  {isImport && <th className="py-3 px-4 w-28">DTA</th>}
                   <th className="py-3 px-4">Observações</th>
                   <th className="py-3 px-4 w-20 text-center">Ações</th>
                 </tr>
@@ -420,17 +456,36 @@ export default function ShipmentManager({
                       </button>
                     </td>
 
-                    {/* Expositor */}
+                    {/* Expositor (Import) ou Consignee (Export) */}
                     <td className="py-3 px-4">
-                      <input
-                        type="text"
-                        value={row.expositor}
-                        onChange={(e) => handleUpdateField(row.id, 'expositor', e.target.value)}
-                        className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-[#ea5b27] focus:bg-white font-bold text-slate-900 rounded px-1.5 py-0.5 outline-hidden"
-                      />
+                      {isImport ? (
+                        <input
+                          type="text"
+                          value={row.expositor}
+                          onChange={(e) => handleUpdateField(row.id, 'expositor', e.target.value)}
+                          className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-[#ea5b27] focus:bg-white font-bold text-slate-900 rounded px-1.5 py-0.5 outline-hidden"
+                        />
+                      ) : (
+                        <div className="space-y-1">
+                          <input
+                            type="text"
+                            value={row.consignee || row.expositor || ''}
+                            placeholder="Nome do Consignee"
+                            onChange={(e) => handleUpdateField(row.id, 'consignee', e.target.value)}
+                            className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-[#ea5b27] focus:bg-white font-bold text-slate-900 rounded px-1.5 py-0.5 outline-hidden text-xs"
+                          />
+                          <input
+                            type="text"
+                            value={row.consigneeAddress || ''}
+                            placeholder="Endereço Completo do Consignee"
+                            onChange={(e) => handleUpdateField(row.id, 'consigneeAddress', e.target.value)}
+                            className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-[#ea5b27] focus:bg-white text-[11px] text-slate-500 rounded px-1.5 py-0.5 outline-hidden"
+                          />
+                        </div>
+                      )}
                     </td>
 
-                    {/* Feira / Estande (Importação) OU Indicador de Retorno Manual (Exportação) */}
+                    {/* Feira / Estande (Importação) OU Exporter & Endereço (Exportação) */}
                     {isImport ? (
                       <td className="py-3 px-4">
                         <div>
@@ -452,8 +507,21 @@ export default function ShipmentManager({
                       </td>
                     ) : (
                       <td className="py-3 px-4">
-                        <div className="bg-slate-50 border border-dashed border-slate-300 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-500 font-medium">
-                          <span className="font-bold text-[#ea5b27]">Return:</span> Campo aberto p/ preenchimento manual
+                        <div className="space-y-1">
+                          <input
+                            type="text"
+                            value={row.exporter || ''}
+                            placeholder="Nome do Exporter"
+                            onChange={(e) => handleUpdateField(row.id, 'exporter', e.target.value)}
+                            className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-[#ea5b27] focus:bg-white font-bold text-slate-800 rounded px-1.5 py-0.5 outline-hidden text-xs"
+                          />
+                          <input
+                            type="text"
+                            value={row.exporterAddress || ''}
+                            placeholder="Endereço Completo do Exporter"
+                            onChange={(e) => handleUpdateField(row.id, 'exporterAddress', e.target.value)}
+                            className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-[#ea5b27] focus:bg-white text-[11px] text-slate-500 rounded px-1.5 py-0.5 outline-hidden"
+                          />
                         </div>
                       </td>
                     )}
@@ -483,6 +551,19 @@ export default function ShipmentManager({
                       </select>
                     </td>
 
+                    {/* Observações Importantes (Apenas Exportação, abaixo da Categoria na etiqueta) */}
+                    {!isImport && (
+                      <td className="py-3 px-4">
+                        <input
+                          type="text"
+                          value={row.observacoesImportantes || ''}
+                          placeholder="Obs. importantes"
+                          onChange={(e) => handleUpdateField(row.id, 'observacoesImportantes', e.target.value)}
+                          className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-[#ea5b27] focus:bg-white text-[11px] font-bold text-slate-800 rounded px-1.5 py-0.5 outline-hidden"
+                        />
+                      </td>
+                    )}
+
                     {/* Quantidade de Volumes */}
                     <td className="py-3 px-4 text-center">
                       <div className="inline-flex items-center justify-center gap-1 bg-slate-100 rounded-lg p-1 border border-slate-200">
@@ -508,16 +589,18 @@ export default function ShipmentManager({
                       />
                     </td>
 
-                    {/* DTA */}
-                    <td className="py-3 px-4">
-                      <input
-                        type="text"
-                        value={row.dta || ''}
-                        placeholder="Nº DTA"
-                        onChange={(e) => handleUpdateField(row.id, 'dta', e.target.value)}
-                        className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-[#ea5b27] focus:bg-white font-mono text-xs text-orange-950 rounded px-1.5 py-0.5 outline-hidden"
-                      />
-                    </td>
+                    {/* DTA (Apenas Importação) */}
+                    {isImport && (
+                      <td className="py-3 px-4">
+                        <input
+                          type="text"
+                          value={row.dta || ''}
+                          placeholder="Nº DTA"
+                          onChange={(e) => handleUpdateField(row.id, 'dta', e.target.value)}
+                          className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-[#ea5b27] focus:bg-white font-mono text-xs text-orange-950 rounded px-1.5 py-0.5 outline-hidden"
+                        />
+                      </td>
+                    )}
 
                     {/* Observações (+ NF tag se houver) */}
                     <td className="py-3 px-4">
@@ -589,7 +672,7 @@ export default function ShipmentManager({
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
                 <h3 className="text-lg font-bold text-slate-900">
-                  Adicionar Expositor Manualmente
+                  {isImport ? 'Adicionar Expositor Manualmente' : 'Adicionar Consignee Manualmente'}
                 </h3>
                 <p className="text-xs text-slate-500">
                   {isImport ? 'Importação • Entrega na Feira' : 'Exportação • Devolução Temporária'}
@@ -604,20 +687,74 @@ export default function ShipmentManager({
             </div>
 
             <form onSubmit={handleAddManual} className="space-y-4">
-              {/* Nome do Expositor */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                  Nome do Expositor / Cliente *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ex: Siemens Energy AG"
-                  value={manualForm.expositor}
-                  onChange={(e) => setManualForm({ ...manualForm, expositor: e.target.value })}
-                  className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-[#ea5b27] focus:ring-1 focus:ring-orange-500 outline-hidden"
-                />
-              </div>
+              {/* Nome do Expositor (Import) ou Consignee + Endereço (Export) */}
+              {isImport ? (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Nome do Expositor / Cliente *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ex: Siemens Energy AG"
+                    value={manualForm.expositor}
+                    onChange={(e) => setManualForm({ ...manualForm, expositor: e.target.value })}
+                    className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-[#ea5b27] focus:ring-1 focus:ring-orange-500 outline-hidden"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                      CONSIGNEE (Cliente / Destinatário) *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ex: Siemens Energy AG"
+                      value={manualForm.consignee || manualForm.expositor}
+                      onChange={(e) => setManualForm({ ...manualForm, consignee: e.target.value, expositor: e.target.value })}
+                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-bold focus:border-[#ea5b27] focus:ring-1 focus:ring-orange-500 outline-hidden"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                      Endereço Completo do Consignee
+                    </label>
+                    <textarea
+                      rows={2}
+                      placeholder="Ex: Otto-Hahn-Ring 6, 81739 Munich, Germany"
+                      value={manualForm.consigneeAddress}
+                      onChange={(e) => setManualForm({ ...manualForm, consigneeAddress: e.target.value })}
+                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-xs focus:border-[#ea5b27] focus:ring-1 focus:ring-orange-500 outline-hidden resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                      EXPORTER (Exportador)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Siemens Brasil Ltda"
+                      value={manualForm.exporter}
+                      onChange={(e) => setManualForm({ ...manualForm, exporter: e.target.value })}
+                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-bold focus:border-[#ea5b27] focus:ring-1 focus:ring-orange-500 outline-hidden"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                      Endereço Completo do Exportador
+                    </label>
+                    <textarea
+                      rows={2}
+                      placeholder="Ex: Av. Mutinga, 3800 - Pirituba, São Paulo - SP, Brasil"
+                      value={manualForm.exporterAddress}
+                      onChange={(e) => setManualForm({ ...manualForm, exporterAddress: e.target.value })}
+                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-xs focus:border-[#ea5b27] focus:ring-1 focus:ring-orange-500 outline-hidden resize-none"
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Quantidade de Volumes & Referência */}
               <div className="grid grid-cols-2 gap-4">
@@ -673,8 +810,27 @@ export default function ShipmentManager({
                 </span>
               </div>
 
+              {/* Em Exportação: Campo de Observações Importantes (Abaixo da Categoria) */}
+              {!isImport && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Observações Importantes (Impresso abaixo da Categoria)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ex: RETORNO DE DEMONSTRAÇÃO"
+                    value={manualForm.observacoesImportantes}
+                    onChange={(e) => setManualForm({ ...manualForm, observacoesImportantes: e.target.value })}
+                    className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-bold focus:border-[#ea5b27] focus:ring-1 focus:ring-orange-500 outline-hidden"
+                  />
+                  <span className="text-[10px] text-slate-500 mt-0.5 block">
+                    Aparecerá centralizado logo abaixo da categoria na etiqueta, sem título e com a mesma fonte do Consignee.
+                  </span>
+                </div>
+              )}
+
               {/* Campos específicos por Modo */}
-              {isImport ? (
+              {isImport && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
@@ -701,27 +857,23 @@ export default function ShipmentManager({
                     />
                   </div>
                 </div>
-              ) : (
-                <div className="p-3 bg-orange-50/60 border border-orange-200 rounded-xl text-xs text-orange-950">
-                  <strong>Destino da Carga:</strong> Será impresso como <strong>RETURN</strong> com espaço pautado aberto para preenchimento manual na feira.
-                </div>
               )}
 
-              {/* DTA e Nota Fiscal */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                    Número DTA (Opcional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ex: 26/0123456-7"
-                    value={manualForm.dta}
-                    onChange={(e) => setManualForm({ ...manualForm, dta: e.target.value })}
-                    className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-mono focus:border-[#ea5b27] focus:ring-1 focus:ring-orange-500 outline-hidden"
-                  />
-                </div>
-                {isImport && (
+              {/* DTA e Nota Fiscal (DTA exclusivo de importação) */}
+              {isImport && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                      Número DTA (Opcional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: 26/0123456-7"
+                      value={manualForm.dta}
+                      onChange={(e) => setManualForm({ ...manualForm, dta: e.target.value })}
+                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-mono focus:border-[#ea5b27] focus:ring-1 focus:ring-orange-500 outline-hidden"
+                    />
+                  </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
                       Nota Fiscal (Opcional)
@@ -733,12 +885,9 @@ export default function ShipmentManager({
                       onChange={(e) => setManualForm({ ...manualForm, notaFiscal: e.target.value })}
                       className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-mono focus:border-[#ea5b27] focus:ring-1 focus:ring-orange-500 outline-hidden"
                     />
-                    <span className="text-[10px] text-slate-500 mt-0.5 block">
-                      Só aparece na etiqueta se preenchida.
-                    </span>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* Observações */}
               <div>
@@ -799,19 +948,69 @@ export default function ShipmentManager({
             </div>
 
             <form onSubmit={handleSaveEdit} className="space-y-4">
-              {/* Nome do Expositor */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                  Nome do Expositor / Cliente *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={editForm.expositor}
-                  onChange={(e) => setEditForm({ ...editForm, expositor: e.target.value })}
-                  className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-bold focus:border-[#ea5b27] focus:ring-1 focus:ring-orange-500 outline-hidden"
-                />
-              </div>
+              {/* Nome do Expositor (Import) ou Consignee + Endereço (Export) */}
+              {isImport ? (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Nome do Expositor / Cliente *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.expositor}
+                    onChange={(e) => setEditForm({ ...editForm, expositor: e.target.value })}
+                    className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-bold focus:border-[#ea5b27] focus:ring-1 focus:ring-orange-500 outline-hidden"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                      CONSIGNEE (Cliente / Destinatário) *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editForm.consignee || editForm.expositor}
+                      onChange={(e) => setEditForm({ ...editForm, consignee: e.target.value, expositor: e.target.value })}
+                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-bold focus:border-[#ea5b27] focus:ring-1 focus:ring-orange-500 outline-hidden"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                      Endereço Completo do Consignee
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={editForm.consigneeAddress}
+                      onChange={(e) => setEditForm({ ...editForm, consigneeAddress: e.target.value })}
+                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-xs focus:border-[#ea5b27] focus:ring-1 focus:ring-orange-500 outline-hidden resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                      EXPORTER (Exportador)
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.exporter}
+                      onChange={(e) => setEditForm({ ...editForm, exporter: e.target.value })}
+                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-bold focus:border-[#ea5b27] focus:ring-1 focus:ring-orange-500 outline-hidden"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                      Endereço Completo do Exportador
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={editForm.exporterAddress}
+                      onChange={(e) => setEditForm({ ...editForm, exporterAddress: e.target.value })}
+                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-xs focus:border-[#ea5b27] focus:ring-1 focus:ring-orange-500 outline-hidden resize-none"
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Quantidade de Volumes & Referência */}
               <div className="grid grid-cols-2 gap-4">
@@ -861,8 +1060,27 @@ export default function ShipmentManager({
                 </select>
               </div>
 
+              {/* Em Exportação: Observações Importantes (Abaixo da Categoria) */}
+              {!isImport && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Observações Importantes (Impresso abaixo da Categoria)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ex: RETORNO DE DEMONSTRAÇÃO"
+                    value={editForm.observacoesImportantes}
+                    onChange={(e) => setEditForm({ ...editForm, observacoesImportantes: e.target.value })}
+                    className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-bold focus:border-[#ea5b27] focus:ring-1 focus:ring-orange-500 outline-hidden"
+                  />
+                  <span className="text-[10px] text-slate-500 mt-0.5 block">
+                    Aparecerá centralizado logo abaixo da categoria na etiqueta, sem título e com a mesma fonte do Consignee.
+                  </span>
+                </div>
+              )}
+
               {/* Campos específicos por Modo */}
-              {isImport ? (
+              {isImport && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
@@ -887,27 +1105,23 @@ export default function ShipmentManager({
                     />
                   </div>
                 </div>
-              ) : (
-                <div className="p-3 bg-orange-50/60 border border-orange-200 rounded-xl text-xs text-orange-950">
-                  <strong>Destino da Carga:</strong> Impresso como <strong>RETURN</strong> com espaço pautado aberto para escrita à mão na feira.
-                </div>
               )}
 
-              {/* DTA e Nota Fiscal */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                    Número DTA (Opcional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ex: 26/0123456-7"
-                    value={editForm.dta}
-                    onChange={(e) => setEditForm({ ...editForm, dta: e.target.value })}
-                    className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-mono focus:border-[#ea5b27] focus:ring-1 focus:ring-orange-500 outline-hidden"
-                  />
-                </div>
-                {isImport && (
+              {/* DTA e Nota Fiscal (DTA exclusivo de importação) */}
+              {isImport && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                      Número DTA (Opcional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: 26/0123456-7"
+                      value={editForm.dta}
+                      onChange={(e) => setEditForm({ ...editForm, dta: e.target.value })}
+                      className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-mono focus:border-[#ea5b27] focus:ring-1 focus:ring-orange-500 outline-hidden"
+                    />
+                  </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
                       Nota Fiscal (Opcional)
@@ -919,12 +1133,9 @@ export default function ShipmentManager({
                       onChange={(e) => setEditForm({ ...editForm, notaFiscal: e.target.value })}
                       className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-mono focus:border-[#ea5b27] focus:ring-1 focus:ring-orange-500 outline-hidden"
                     />
-                    <span className="text-[10px] text-slate-500 mt-0.5 block">
-                      Só aparece na etiqueta se preenchida.
-                    </span>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* Observações */}
               <div>

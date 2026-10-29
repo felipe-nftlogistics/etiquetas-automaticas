@@ -119,19 +119,32 @@ export function parseExcelFile(file, operationType) {
           let estande = '';
           let consignatario = '';
           let destino = '';
+          let consignee = '';
+          let consigneeAddress = '';
+          let exporter = '';
+          let exporterAddress = '';
+          let observacoesImportantes = '';
 
           if (operationType === 'importacao') {
             feira = findValue(['nome da feira', 'feira', 'evento', 'nome do evento', 'fair', 'event', 'trade show', 'exposicao']);
             estande = findValue(['estande / local', 'estande', 'stand', 'booth', 'pavilhao', 'local']);
           } else {
-            consignatario = findValue(['consignatario da carga', 'consignatario', 'destinatario', 'consignee', 'receiver', 'destinatario final']);
-            destino = findValue(['pais de destino', 'destino', 'cidade', 'pais', 'aeroporto', 'destination', 'country']);
+            consignee = findValue(['consignee', 'nome do consignee', 'consignatario', 'destinatario', 'nome do expositor', 'expositor', 'cliente']);
+            consigneeAddress = findValue(['endereco consignee', 'endereco completo consignee', 'consignee address', 'endereco do consignee', 'address consignee', 'endereco']);
+            exporter = findValue(['exporter', 'nome do exporter', 'exportador', 'nome do exportador', 'shipper', 'remetente']);
+            exporterAddress = findValue(['endereco exporter', 'endereco completo exporter', 'exporter address', 'endereco do exportador', 'address exporter']);
+            observacoesImportantes = findValue(['observacoes importantes', 'observacao importante', 'important notes', 'obs importantes', 'obs importante', 'nota importante']);
           }
 
           return {
             id: `row-${Date.now()}-${index}`,
             selected: true,
-            expositor: sanitizeInput(expositor || `Expositor ${index + 1}`),
+            expositor: sanitizeInput(operationType === 'importacao' ? (expositor || `Expositor ${index + 1}`) : (consignee || expositor || `Consignee ${index + 1}`)),
+            consignee: sanitizeInput(consignee || expositor || ''),
+            consigneeAddress: sanitizeInput(consigneeAddress),
+            exporter: sanitizeInput(exporter),
+            exporterAddress: sanitizeInput(exporterAddress),
+            observacoesImportantes: sanitizeInput(observacoesImportantes),
             volumes: volumes,
             referencia: sanitizeInput(referencia || `NFT-${new Date().getFullYear()}-${String(index + 1).padStart(4, '0')}`),
             tipoCarga: tipoCarga,
@@ -140,7 +153,7 @@ export function parseExcelFile(file, operationType) {
             consignatario: sanitizeInput(consignatario),
             destino: sanitizeInput(destino),
             observacoes: sanitizeInput(observacoes),
-            dta: sanitizeInput(dta),
+            dta: operationType === 'importacao' ? sanitizeInput(dta) : '',
             notaFiscal: sanitizeInput(notaFiscal),
           };
         });
@@ -201,28 +214,37 @@ export function downloadExcelTemplate(operationType) {
     fileName = 'NFT_Logistics_Modelo_Importacao_Feira.xlsx';
   } else {
     headers = [
-      'Nome do Expositor',
+      'Consignee',
+      'Endereço Consignee',
+      'Exporter',
+      'Endereço Exporter',
+      'Categoria',
+      'Observações Importantes',
       'Quantidade de Volumes',
       'Referencia Interna',
-      'Categoria',
-      'DTA',
       'Observacoes'
     ];
     sampleData = [
       {
-        'Nome do Expositor': 'Siemens Energy AG',
+        'Consignee': 'Siemens Energy AG',
+        'Endereço Consignee': 'Otto-Hahn-Ring 6, 81739 Munich, Germany',
+        'Exporter': 'Siemens Brasil Ltda',
+        'Endereço Exporter': 'Av. Mutinga, 3800 - Pirituba, São Paulo - SP, Brasil',
+        'Categoria': 'Temporary',
+        'Observações Importantes': 'RETORNO DE DEMONSTRAÇÃO',
         'Quantidade de Volumes': 40,
         'Referencia Interna': 'NFT-2026-EXP-0104',
-        'Categoria': 'Temporary',
-        'DTA': '26/0123456-7',
         'Observacoes': 'Devolução após feira'
       },
       {
-        'Nome do Expositor': 'Bosch Rexroth Brasil',
+        'Consignee': 'Bosch Rexroth AG',
+        'Endereço Consignee': 'Maria-Theresien-Str. 23, 97816 Lohr am Main, Germany',
+        'Exporter': 'Bosch Rexroth Brasil',
+        'Endereço Exporter': 'Av. Tégula, 888 - Atibaia - SP, Brasil',
+        'Categoria': 'Empty',
+        'Observações Importantes': 'VOLUMES VAZIOS',
         'Quantidade de Volumes': 12,
         'Referencia Interna': 'NFT-2026-EXP-0108',
-        'Categoria': 'Empty',
-        'DTA': '',
         'Observacoes': 'Caixas vazias'
       }
     ];

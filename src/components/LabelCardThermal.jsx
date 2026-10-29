@@ -44,50 +44,72 @@ export default function LabelCardThermal({ item, operationType, isPrintMode = fa
       {/* 2. DADOS DO CLIENTE & EVENTO COM QUEBRA DE LINHA */}
       {/* ========================================================= */}
       <div className="space-y-1.5 py-0.5">
-        {/* Expositor com suporte a múltiplas linhas (ex: caracteres chineses + inglês) */}
-        <div>
-          <span className="text-[7.5px] font-extrabold text-slate-500 uppercase tracking-wider block">
-            EXPOSITOR / EXHIBITOR (CLIENTE):
-          </span>
-          <h3 className="text-xs sm:text-[13px] font-black text-slate-900 uppercase leading-snug line-clamp-3 whitespace-pre-line">
-            {item.expositor || 'NOME DO EXPOSITOR'}
-          </h3>
-        </div>
-
-        {/* Feira ou Retorno Aberto para preenchimento manual */}
         {isImport ? (
-          <div className="space-y-0.5">
+          <>
+            {/* Expositor com suporte a múltiplas linhas (ex: caracteres chineses + inglês) */}
             <div>
               <span className="text-[7.5px] font-extrabold text-slate-500 uppercase tracking-wider block">
-                FEIRA / EVENTO (DESTINATION EVENT):
+                EXPOSITOR / EXHIBITOR (CLIENTE):
               </span>
-              <span className="text-[11px] sm:text-xs font-black text-[#ea5b27] uppercase leading-tight block line-clamp-2">
-                {item.feira || 'FEIRA INTERNACIONAL'}
-              </span>
+              <h3 className="text-xs sm:text-[13px] font-black text-slate-900 uppercase leading-snug line-clamp-3 whitespace-pre-line">
+                {item.expositor || 'NOME DO EXPOSITOR'}
+              </h3>
             </div>
-            {item.estande && (
+
+            {/* Feira / Evento */}
+            <div className="space-y-0.5">
               <div>
-                <span className="text-[8.5px] font-bold text-slate-800 line-clamp-1">
-                  ESTANDE / LOCAL: <strong className="text-slate-900">{item.estande}</strong>
+                <span className="text-[7.5px] font-extrabold text-slate-500 uppercase tracking-wider block">
+                  FEIRA / EVENTO (DESTINATION EVENT):
+                </span>
+                <span className="text-[11px] sm:text-xs font-black text-[#ea5b27] uppercase leading-tight block line-clamp-2">
+                  {item.feira || 'FEIRA INTERNACIONAL'}
                 </span>
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-1 pt-0.5">
-            <span className="text-[8.5px] font-black text-[#ea5b27] uppercase tracking-wider block">
-              RETURN:
-            </span>
-            {/* Campo aberto para escrita à mão na feira (altura para 3 linhas) */}
-            <div className="w-full border-2 border-dashed border-slate-400 bg-white rounded-md p-1 min-h-[44px] flex flex-col justify-between">
-              <div className="w-full border-b border-slate-200 h-3"></div>
-              <div className="w-full border-b border-slate-200 h-3"></div>
-              <div className="w-full h-3"></div>
+              {item.estande && (
+                <div>
+                  <span className="text-[8.5px] font-bold text-slate-800 line-clamp-1">
+                    ESTANDE / LOCAL: <strong className="text-slate-900">{item.estande}</strong>
+                  </span>
+                </div>
+              )}
             </div>
-          </div>
+          </>
+        ) : (
+          <>
+            {/* EXPORTAÇÃO: CONSIGNEE + ENDEREÇO */}
+            <div className="space-y-0.5">
+              <span className="text-[7.5px] font-extrabold text-slate-500 uppercase tracking-wider block">
+                CONSIGNEE:
+              </span>
+              <h3 className="text-xs sm:text-[13px] font-black text-slate-900 uppercase leading-snug line-clamp-2 whitespace-pre-line">
+                {item.consignee || item.expositor || 'NOME DO CONSIGNEE'}
+              </h3>
+              {item.consigneeAddress && (
+                <p className="text-[8.5px] sm:text-[9.5px] font-semibold text-slate-600 leading-tight whitespace-pre-line">
+                  {item.consigneeAddress}
+                </p>
+              )}
+            </div>
+
+            {/* EXPORTAÇÃO: EXPORTER + ENDEREÇO */}
+            <div className="space-y-0.5 pt-0.5">
+              <span className="text-[7.5px] font-extrabold text-slate-500 uppercase tracking-wider block">
+                EXPORTER:
+              </span>
+              <h3 className="text-[11px] sm:text-xs font-black text-slate-900 uppercase leading-snug line-clamp-2 whitespace-pre-line">
+                {item.exporter || 'NOME DO EXPORTADOR'}
+              </h3>
+              {item.exporterAddress && (
+                <p className="text-[8.5px] sm:text-[9.5px] font-semibold text-slate-600 leading-tight whitespace-pre-line">
+                  {item.exporterAddress}
+                </p>
+              )}
+            </div>
+          </>
         )}
 
-        {/* Card de Observações / Notas com DTA e Nota Fiscal */}
+        {/* Card de Observações / Notas com DTA (apenas import) e Nota Fiscal */}
         <div className="bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-[8.5px] flex flex-col justify-between">
           <div>
             <span className="text-[7.5px] font-bold text-slate-500 uppercase block mb-0.5">
@@ -98,9 +120,9 @@ export default function LabelCardThermal({ item, operationType, isPrintMode = fa
             </p>
           </div>
 
-          {(item.dta || item.notaFiscal) && (
+          {((isImport && item.dta) || item.notaFiscal) && (
             <div className="mt-1 pt-1 border-t border-slate-200/80 flex flex-wrap gap-1 text-[8px] font-mono">
-              {item.dta && (
+              {isImport && item.dta && (
                 <span className="bg-orange-100/80 text-orange-950 font-bold px-1 py-0.2 rounded">
                   DTA: <span className="font-extrabold">{item.dta}</span>
                 </span>
@@ -118,10 +140,19 @@ export default function LabelCardThermal({ item, operationType, isPrintMode = fa
       {/* ========================================================= */}
       {/* 3. DESTAQUE CENTRAL: STATUS DA CARGA */}
       {/* ========================================================= */}
-      <div className="my-auto py-1 text-center w-full">
+      <div className="my-auto py-1 text-center w-full flex flex-col items-center justify-center">
         <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight uppercase leading-none">
           {tipoCarga}
         </h2>
+
+        {/* Em Exportação: Campo de observações importantes centralizado, sem título, fonte igual ao Consignee */}
+        {!isImport && item.observacoesImportantes && (
+          <div className="w-full text-center mt-1">
+            <p className="text-xs sm:text-[13px] font-black text-slate-900 uppercase tracking-tight leading-tight px-2">
+              {item.observacoesImportantes}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* ========================================================= */}

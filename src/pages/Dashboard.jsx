@@ -50,7 +50,12 @@ export default function Dashboard({ session, onLogout }) {
         labels.push({
           id: `${ship.id}-vol-${v}`,
           shipmentId: ship.id,
-          expositor: ship.expositor,
+          expositor: ship.expositor || ship.consignee || '',
+          consignee: ship.consignee || ship.expositor || '',
+          consigneeAddress: ship.consigneeAddress || '',
+          exporter: ship.exporter || '',
+          exporterAddress: ship.exporterAddress || '',
+          observacoesImportantes: ship.observacoesImportantes || '',
           referencia: ship.referencia,
           tipoCarga: ship.tipoCarga || 'Temporary',
           feira: ship.feira || '',

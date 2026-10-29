@@ -47,53 +47,75 @@ export default function LabelCard({ item, operationType, isPrintMode = false }) 
       {/* ========================================================= */}
       <div className="grid grid-cols-12 gap-3 py-1 items-start">
         
-        {/* Coluna Esquerda: Expositor & Evento/Destino (8 colunas) */}
+        {/* Coluna Esquerda: Expositor & Evento (Importação) OU Consignee & Exporter (Exportação) */}
         <div className="col-span-8 space-y-1">
-          {/* Expositor com suporte a múltiplas linhas (ex: caracteres chineses + inglês) */}
-          <div>
-            <span className="text-[8.5px] font-extrabold text-slate-500 uppercase tracking-wider block">
-              EXPOSITOR / EXHIBITOR (CLIENTE):
-            </span>
-            <h3 className="text-sm sm:text-base font-black text-slate-900 uppercase leading-snug line-clamp-3 whitespace-pre-line">
-              {item.expositor || 'NOME DO EXPOSITOR'}
-            </h3>
-          </div>
-
-          {/* Feira ou Retorno Aberto para preenchimento manual */}
           {isImport ? (
-            <div className="space-y-0.5">
+            <>
+              {/* Expositor com suporte a múltiplas linhas (ex: caracteres chineses + inglês) */}
               <div>
                 <span className="text-[8.5px] font-extrabold text-slate-500 uppercase tracking-wider block">
-                  FEIRA / EVENTO (DESTINATION EVENT):
+                  EXPOSITOR / EXHIBITOR (CLIENTE):
                 </span>
-                <span className="text-xs sm:text-sm font-black text-[#ea5b27] uppercase leading-tight block line-clamp-2">
-                  {item.feira || 'FEIRA INTERNACIONAL'}
-                </span>
+                <h3 className="text-sm sm:text-base font-black text-slate-900 uppercase leading-snug line-clamp-3 whitespace-pre-line">
+                  {item.expositor || 'NOME DO EXPOSITOR'}
+                </h3>
               </div>
-              {item.estande && (
+
+              {/* Feira / Evento */}
+              <div className="space-y-0.5">
                 <div>
-                  <span className="text-[8.5px] font-bold text-slate-800 line-clamp-1">
-                    ESTANDE / LOCAL: <strong className="text-slate-900">{item.estande}</strong>
+                  <span className="text-[8.5px] font-extrabold text-slate-500 uppercase tracking-wider block">
+                    FEIRA / EVENTO (DESTINATION EVENT):
+                  </span>
+                  <span className="text-xs sm:text-sm font-black text-[#ea5b27] uppercase leading-tight block line-clamp-2">
+                    {item.feira || 'FEIRA INTERNACIONAL'}
                   </span>
                 </div>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-1 pt-0.5">
-              <span className="text-[9px] font-black text-[#ea5b27] uppercase tracking-wider block">
-                RETURN:
-              </span>
-              {/* Campo aberto para escrita à mão na feira (mesma largura e altura para 3 linhas) */}
-              <div className="w-full border-2 border-dashed border-slate-400 bg-white rounded-md p-1.5 min-h-[46px] flex flex-col justify-between">
-                <div className="w-full border-b border-slate-200 h-3"></div>
-                <div className="w-full border-b border-slate-200 h-3"></div>
-                <div className="w-full h-3"></div>
+                {item.estande && (
+                  <div>
+                    <span className="text-[8.5px] font-bold text-slate-800 line-clamp-1">
+                      ESTANDE / LOCAL: <strong className="text-slate-900">{item.estande}</strong>
+                    </span>
+                  </div>
+                )}
               </div>
-            </div>
+            </>
+          ) : (
+            <>
+              {/* EXPORTAÇÃO: CONSIGNEE + ENDEREÇO COMPLETO */}
+              <div>
+                <span className="text-[8.5px] font-extrabold text-slate-500 uppercase tracking-wider block">
+                  CONSIGNEE:
+                </span>
+                <h3 className="text-sm sm:text-base font-black text-slate-900 uppercase leading-snug line-clamp-2 whitespace-pre-line">
+                  {item.consignee || item.expositor || 'NOME DO CONSIGNEE'}
+                </h3>
+                {item.consigneeAddress && (
+                  <p className="text-[9.5px] sm:text-[10.5px] font-semibold text-slate-600 leading-tight whitespace-pre-line mt-0.5">
+                    {item.consigneeAddress}
+                  </p>
+                )}
+              </div>
+
+              {/* EXPORTAÇÃO: EXPORTER + ENDEREÇO COMPLETO */}
+              <div className="pt-0.5">
+                <span className="text-[8.5px] font-extrabold text-slate-500 uppercase tracking-wider block">
+                  EXPORTER:
+                </span>
+                <h3 className="text-xs sm:text-sm font-black text-slate-900 uppercase leading-snug line-clamp-2 whitespace-pre-line">
+                  {item.exporter || 'NOME DO EXPORTADOR'}
+                </h3>
+                {item.exporterAddress && (
+                  <p className="text-[9.5px] sm:text-[10.5px] font-semibold text-slate-600 leading-tight whitespace-pre-line mt-0.5">
+                    {item.exporterAddress}
+                  </p>
+                )}
+              </div>
+            </>
           )}
         </div>
 
-        {/* Coluna Direita: Card de Observações / Notas com DTA e Nota Fiscal */}
+        {/* Coluna Direita: Card de Observações / Notas com DTA (apenas import) e Nota Fiscal */}
         <div className="col-span-4 bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-[9px] flex flex-col justify-between min-h-[58px]">
           <div>
             <span className="text-[8px] font-bold text-slate-500 uppercase block mb-0.5">
@@ -104,10 +126,10 @@ export default function LabelCard({ item, operationType, isPrintMode = false }) 
             </p>
           </div>
 
-          {/* Tags de DTA e Nota Fiscal (se preenchidos) */}
-          {(item.dta || item.notaFiscal) && (
+          {/* Tags de DTA e Nota Fiscal (DTA exclusivo para importação) */}
+          {((isImport && item.dta) || item.notaFiscal) && (
             <div className="mt-1 pt-1 border-t border-slate-200/80 flex flex-wrap gap-1.5 text-[8.5px] font-mono">
-              {item.dta && (
+              {isImport && item.dta && (
                 <span className="bg-orange-100/80 text-orange-950 font-bold px-1.5 py-0.5 rounded">
                   DTA: <span className="font-extrabold">{item.dta}</span>
                 </span>
@@ -126,10 +148,19 @@ export default function LabelCard({ item, operationType, isPrintMode = false }) 
       {/* ========================================================= */}
       {/* 3. DESTAQUE CENTRAL: "TEMPORARY", "DEFINITIVE", "EMPTY", "FULL", "FRAGILE" */}
       {/* ========================================================= */}
-      <div className="my-auto py-2 text-center w-full">
+      <div className="my-auto py-1 sm:py-2 text-center w-full flex flex-col items-center justify-center">
         <h2 className="text-5xl sm:text-6xl font-black text-slate-900 tracking-tight uppercase leading-none">
           {tipoCarga}
         </h2>
+
+        {/* Em Exportação: Campo de observações importantes centralizado, sem título, fonte igual ao Consignee */}
+        {!isImport && item.observacoesImportantes && (
+          <div className="w-full text-center mt-1 sm:mt-1.5">
+            <p className="text-sm sm:text-base font-black text-slate-900 uppercase tracking-tight leading-tight px-4">
+              {item.observacoesImportantes}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* ========================================================= */}

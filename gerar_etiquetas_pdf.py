@@ -129,33 +129,32 @@ def desenhar_etiqueta_a5(c, origin_x, origin_y, dados, operacao, logo_full_path,
     col_left_x = box_x + mm_to_pt(4)
     col_left_w = mm_to_pt(124)
 
-    # Expositor (com quebra de linha quando longo)
-    c.setFont('Helvetica-Bold', 6.8)
-    c.setFillColor(COLOR_TEXT_MUTED)
-    c.drawString(col_left_x, info_top_y - mm_to_pt(2), 'EXPOSITOR / EXHIBITOR (CLIENTE):')
-
-    expositor_str = str(dados.get('expositor', 'EXPOSITOR')).upper()
-    exp_words = expositor_str.split()
-    exp_l1, exp_l2 = "", ""
-    for w in exp_words:
-        if len(exp_l1 + " " + w) <= 38 and not exp_l2:
-            exp_l1 = (exp_l1 + " " + w).strip()
-        else:
-            exp_l2 = (exp_l2 + " " + w).strip()
-    if not exp_l1:
-        exp_l1 = expositor_str[:38]
-
-    exp_font_size = 11.5 if exp_l2 else 13.5
-    c.setFont('Helvetica-Bold', exp_font_size)
-    c.setFillColor(COLOR_TEXT_MAIN)
-    c.drawString(col_left_x, info_top_y - mm_to_pt(7.2), exp_l1)
-    after_exp_y = info_top_y - mm_to_pt(12)
-    if exp_l2:
-        c.drawString(col_left_x, info_top_y - mm_to_pt(11.5), exp_l2[:42])
-        after_exp_y = info_top_y - mm_to_pt(16)
-
-    # Feira ou Consignatário (com quebra de linha)
     if is_import:
+        # Expositor (com quebra de linha quando longo)
+        c.setFont('Helvetica-Bold', 6.8)
+        c.setFillColor(COLOR_TEXT_MUTED)
+        c.drawString(col_left_x, info_top_y - mm_to_pt(2), 'EXPOSITOR / EXHIBITOR (CLIENTE):')
+
+        expositor_str = str(dados.get('expositor', 'EXPOSITOR')).upper()
+        exp_words = expositor_str.split()
+        exp_l1, exp_l2 = "", ""
+        for w in exp_words:
+            if len(exp_l1 + " " + w) <= 38 and not exp_l2:
+                exp_l1 = (exp_l1 + " " + w).strip()
+            else:
+                exp_l2 = (exp_l2 + " " + w).strip()
+        if not exp_l1:
+            exp_l1 = expositor_str[:38]
+
+        exp_font_size = 11.5 if exp_l2 else 13.5
+        c.setFont('Helvetica-Bold', exp_font_size)
+        c.setFillColor(COLOR_TEXT_MAIN)
+        c.drawString(col_left_x, info_top_y - mm_to_pt(7.2), exp_l1)
+        after_exp_y = info_top_y - mm_to_pt(12)
+        if exp_l2:
+            c.drawString(col_left_x, info_top_y - mm_to_pt(11.5), exp_l2[:42])
+            after_exp_y = info_top_y - mm_to_pt(16)
+
         c.setFont('Helvetica-Bold', 6.5)
         c.setFillColor(COLOR_TEXT_MUTED)
         c.drawString(col_left_x, after_exp_y - mm_to_pt(0.5), 'FEIRA / EVENTO (DESTINATION EVENT):')
@@ -183,32 +182,39 @@ def desenhar_etiqueta_a5(c, origin_x, origin_y, dados, operacao, logo_full_path,
             c.setFillColor(COLOR_TEXT_MAIN)
             c.drawString(col_left_x, after_f_y - mm_to_pt(0.2), f"ESTANDE / LOCAL: {str(dados.get('estande'))[:45]}")
     else:
-        c.setFont('Helvetica-Bold', 6.5)
+        # EXPORTAÇÃO: CONSIGNEE + Endereço e EXPORTER + Endereço
+        c.setFont('Helvetica-Bold', 6.8)
         c.setFillColor(COLOR_TEXT_MUTED)
-        c.drawString(col_left_x, after_exp_y - mm_to_pt(0.5), 'CONSIGNATÁRIO / CONSIGNEE (DESTINATÁRIO NO EXTERIOR):')
+        c.drawString(col_left_x, info_top_y - mm_to_pt(2), 'CONSIGNEE:')
 
-        c.setFont('Helvetica-Bold', 10)
+        cons_name = str(dados.get('consignee') or dados.get('expositor') or 'CONSIGNEE').upper()
+        c.setFont('Helvetica-Bold', 12)
         c.setFillColor(COLOR_TEXT_MAIN)
-        cons_str = str(dados.get('consignatario', 'CONSIGNEE')).upper()
-        c_words = cons_str.split()
-        c_l1, c_l2 = "", ""
-        for w in c_words:
-            if len(c_l1 + " " + w) <= 40 and not c_l2:
-                c_l1 = (c_l1 + " " + w).strip()
-            else:
-                c_l2 = (c_l2 + " " + w).strip()
-        if not c_l1:
-            c_l1 = cons_str[:40]
-        c.drawString(col_left_x, after_exp_y - mm_to_pt(4.5), c_l1)
-        after_c_y = after_exp_y - mm_to_pt(8.5)
-        if c_l2:
-            c.drawString(col_left_x, after_exp_y - mm_to_pt(8.5), c_l2[:44])
-            after_c_y = after_exp_y - mm_to_pt(12.5)
+        c.drawString(col_left_x, info_top_y - mm_to_pt(6.5), cons_name[:42])
+        cur_y = info_top_y - mm_to_pt(10.5)
 
-        if dados.get('destino'):
-            c.setFont('Helvetica-Bold', 8.5)
-            c.setFillColor(COLOR_NFT_ORANGE)
-            c.drawString(col_left_x, after_c_y - mm_to_pt(0.2), f"DESTINO FINAL: {str(dados.get('destino'))[:42].upper()}")
+        if dados.get('consigneeAddress'):
+            c.setFont('Helvetica', 7.5)
+            c.setFillColor(colors.HexColor('#475569'))
+            c.drawString(col_left_x, cur_y, str(dados.get('consigneeAddress'))[:60])
+            cur_y -= mm_to_pt(4)
+
+        cur_y -= mm_to_pt(1.5)
+        c.setFont('Helvetica-Bold', 6.8)
+        c.setFillColor(COLOR_TEXT_MUTED)
+        c.drawString(col_left_x, cur_y, 'EXPORTER:')
+        cur_y -= mm_to_pt(4.2)
+
+        exp_name = str(dados.get('exporter') or 'EXPORTER').upper()
+        c.setFont('Helvetica-Bold', 11)
+        c.setFillColor(COLOR_TEXT_MAIN)
+        c.drawString(col_left_x, cur_y, exp_name[:42])
+        cur_y -= mm_to_pt(4)
+
+        if dados.get('exporterAddress'):
+            c.setFont('Helvetica', 7.5)
+            c.setFillColor(colors.HexColor('#475569'))
+            c.drawString(col_left_x, cur_y, str(dados.get('exporterAddress'))[:60])
 
     # Coluna Direita: Box de Observações / Notas (Regime Aduaneiro removido)
     card_x = box_x + box_w - mm_to_pt(64)
@@ -247,14 +253,18 @@ def desenhar_etiqueta_a5(c, origin_x, origin_y, dados, operacao, logo_full_path,
         c.drawString(card_x + mm_to_pt(3), card_y + card_h - mm_to_pt(14), line2[:34])
 
     # 5. O DESTAQUE CENTRAL: "TEMPORARY", "DEFINITIVE", "EMPTY", "FULL" OU "FRAGILE"
-    # Pegando a largura toda da etiqueta, bem no centro, bem visível!
-    center_y = box_y + mm_to_pt(55)
+    has_obs_imp = (not is_import) and bool(dados.get('observacoesImportantes'))
+    center_y = box_y + mm_to_pt(58 if has_obs_imp else 55)
     tipo_carga = str(dados.get('tipoCarga', 'TEMPORARY')).upper()
 
-    # Título ainda maior pegando o centro de forma marcante
-    c.setFont('Helvetica-Bold', 52)
+    c.setFont('Helvetica-Bold', 46 if has_obs_imp else 52)
     c.setFillColor(COLOR_NFT_DARK)
     c.drawCentredString(box_x + box_w / 2, center_y, tipo_carga)
+
+    if has_obs_imp:
+        c.setFont('Helvetica-Bold', 12)  # Tamanho da fonte igual ao Consignee
+        c.setFillColor(COLOR_TEXT_MAIN)
+        c.drawCentredString(box_x + box_w / 2, center_y - mm_to_pt(8), str(dados.get('observacoesImportantes')).upper()[:50])
 
     # 6. PARTE INFERIOR: VOLUMES LARGURA TOTAL ALINHADOS AO BOTTOM
     # Margem inferior de 4mm, idêntica às margens laterais de 4mm
@@ -375,32 +385,30 @@ def desenhar_etiqueta_termica_10x15(c, origin_x, origin_y, dados, operacao, logo
     # 3. DISTRIBUIÇÃO DAS INFORMAÇÕES COM QUEBRA DE LINHA
     info_top_y = line_y - mm_to_pt(1.5)
 
-    # Expositor (com quebra de linha)
-    c.setFont('Helvetica-Bold', 6)
-    c.setFillColor(COLOR_TEXT_MUTED)
-    c.drawString(box_x + mm_to_pt(2.5), info_top_y - mm_to_pt(2.5), 'EXPOSITOR / EXHIBITOR (CLIENTE):')
-
-    c.setFont('Helvetica-Bold', 9.5)
-    c.setFillColor(COLOR_TEXT_MAIN)
-    expositor_str = str(dados.get('expositor', 'EXPOSITOR')).upper()
-    exp_words = expositor_str.split()
-    exp_l1 = ""
-    exp_l2 = ""
-    for w in exp_words:
-        if len(exp_l1 + " " + w) <= 32 and not exp_l2:
-            exp_l1 = (exp_l1 + " " + w).strip()
-        else:
-            exp_l2 = (exp_l2 + " " + w).strip()
-    if not exp_l1:
-        exp_l1 = expositor_str[:32]
-    c.drawString(box_x + mm_to_pt(2.5), info_top_y - mm_to_pt(6.2), exp_l1)
-    next_info_y = info_top_y - mm_to_pt(9.5)
-    if exp_l2:
-        c.drawString(box_x + mm_to_pt(2.5), info_top_y - mm_to_pt(9.8), exp_l2[:32])
-        next_info_y = info_top_y - mm_to_pt(13.2)
-
-    # Feira ou Consignatário (com quebra de linha)
     if is_import:
+        c.setFont('Helvetica-Bold', 6)
+        c.setFillColor(COLOR_TEXT_MUTED)
+        c.drawString(box_x + mm_to_pt(2.5), info_top_y - mm_to_pt(2.5), 'EXPOSITOR / EXHIBITOR (CLIENTE):')
+
+        c.setFont('Helvetica-Bold', 9.5)
+        c.setFillColor(COLOR_TEXT_MAIN)
+        expositor_str = str(dados.get('expositor', 'EXPOSITOR')).upper()
+        exp_words = expositor_str.split()
+        exp_l1 = ""
+        exp_l2 = ""
+        for w in exp_words:
+            if len(exp_l1 + " " + w) <= 32 and not exp_l2:
+                exp_l1 = (exp_l1 + " " + w).strip()
+            else:
+                exp_l2 = (exp_l2 + " " + w).strip()
+        if not exp_l1:
+            exp_l1 = expositor_str[:32]
+        c.drawString(box_x + mm_to_pt(2.5), info_top_y - mm_to_pt(6.2), exp_l1)
+        next_info_y = info_top_y - mm_to_pt(9.5)
+        if exp_l2:
+            c.drawString(box_x + mm_to_pt(2.5), info_top_y - mm_to_pt(9.8), exp_l2[:32])
+            next_info_y = info_top_y - mm_to_pt(13.2)
+
         c.setFont('Helvetica-Bold', 6)
         c.setFillColor(COLOR_TEXT_MUTED)
         c.drawString(box_x + mm_to_pt(2.5), next_info_y - mm_to_pt(2.5), 'FEIRA / EVENTO (DESTINATION EVENT):')
@@ -428,32 +436,39 @@ def desenhar_etiqueta_termica_10x15(c, origin_x, origin_y, dados, operacao, logo
             c.setFillColor(COLOR_TEXT_MAIN)
             c.drawString(box_x + mm_to_pt(2.5), after_feira_y - mm_to_pt(0.5), f"ESTANDE / LOCAL: {str(dados.get('estande'))[:34]}")
     else:
+        # EXPORTAÇÃO TÉRMICA: CONSIGNEE + Endereço e EXPORTER + Endereço
         c.setFont('Helvetica-Bold', 6)
         c.setFillColor(COLOR_TEXT_MUTED)
-        c.drawString(box_x + mm_to_pt(2.5), next_info_y - mm_to_pt(2.5), 'CONSIGNATÁRIO / CONSIGNEE (EXTERIOR):')
+        c.drawString(box_x + mm_to_pt(2.5), info_top_y - mm_to_pt(2.5), 'CONSIGNEE:')
 
-        c.setFont('Helvetica-Bold', 8)
+        cons_name = str(dados.get('consignee') or dados.get('expositor') or 'CONSIGNEE').upper()
+        c.setFont('Helvetica-Bold', 9.5)
         c.setFillColor(COLOR_TEXT_MAIN)
-        cons_str = str(dados.get('consignatario', 'CONSIGNEE')).upper()
-        cons_words = cons_str.split()
-        c_l1, c_l2 = "", ""
-        for w in cons_words:
-            if len(c_l1 + " " + w) <= 34 and not c_l2:
-                c_l1 = (c_l1 + " " + w).strip()
-            else:
-                c_l2 = (c_l2 + " " + w).strip()
-        if not c_l1:
-            c_l1 = cons_str[:34]
-        c.drawString(box_x + mm_to_pt(2.5), next_info_y - mm_to_pt(6), c_l1)
-        after_cons_y = next_info_y - mm_to_pt(9)
-        if c_l2:
-            c.drawString(box_x + mm_to_pt(2.5), next_info_y - mm_to_pt(9.2), c_l2[:34])
-            after_cons_y = next_info_y - mm_to_pt(12.2)
+        c.drawString(box_x + mm_to_pt(2.5), info_top_y - mm_to_pt(6), cons_name[:32])
+        cur_y = info_top_y - mm_to_pt(9.2)
 
-        if dados.get('destino'):
-            c.setFont('Helvetica-Bold', 7)
-            c.setFillColor(COLOR_NFT_ORANGE)
-            c.drawString(box_x + mm_to_pt(2.5), after_cons_y - mm_to_pt(0.5), f"DESTINO FINAL: {str(dados.get('destino'))[:32].upper()}")
+        if dados.get('consigneeAddress'):
+            c.setFont('Helvetica', 7)
+            c.setFillColor(colors.HexColor('#475569'))
+            c.drawString(box_x + mm_to_pt(2.5), cur_y, str(dados.get('consigneeAddress'))[:38])
+            cur_y -= mm_to_pt(3.2)
+
+        cur_y -= mm_to_pt(1.2)
+        c.setFont('Helvetica-Bold', 6)
+        c.setFillColor(COLOR_TEXT_MUTED)
+        c.drawString(box_x + mm_to_pt(2.5), cur_y, 'EXPORTER:')
+        cur_y -= mm_to_pt(3.5)
+
+        exp_name = str(dados.get('exporter') or 'EXPORTER').upper()
+        c.setFont('Helvetica-Bold', 9)
+        c.setFillColor(COLOR_TEXT_MAIN)
+        c.drawString(box_x + mm_to_pt(2.5), cur_y, exp_name[:32])
+        cur_y -= mm_to_pt(3.2)
+
+        if dados.get('exporterAddress'):
+            c.setFont('Helvetica', 7)
+            c.setFillColor(colors.HexColor('#475569'))
+            c.drawString(box_x + mm_to_pt(2.5), cur_y, str(dados.get('exporterAddress'))[:38])
 
     # Box de Observações / Notas
     card_x = box_x + mm_to_pt(2.5)
@@ -491,12 +506,18 @@ def desenhar_etiqueta_termica_10x15(c, origin_x, origin_y, dados, operacao, logo
         c.drawString(card_x + mm_to_pt(2.5), card_y + card_h - mm_to_pt(11.5), line2[:48])
 
     # 4. DESTAQUE CENTRAL (36pt)
-    center_y = box_y + mm_to_pt(49)
+    has_obs_imp = (not is_import) and bool(dados.get('observacoesImportantes'))
+    center_y = box_y + mm_to_pt(51 if has_obs_imp else 49)
     tipo_carga = str(dados.get('tipoCarga', 'TEMPORARY')).upper()
 
-    c.setFont('Helvetica-Bold', 36)
+    c.setFont('Helvetica-Bold', 32 if has_obs_imp else 36)
     c.setFillColor(COLOR_NFT_DARK)
     c.drawCentredString(box_x + box_w / 2, center_y, tipo_carga)
+
+    if has_obs_imp:
+        c.setFont('Helvetica-Bold', 9.5)  # Tamanho da fonte igual ao Consignee
+        c.setFillColor(COLOR_TEXT_MAIN)
+        c.drawCentredString(box_x + box_w / 2, center_y - mm_to_pt(6.5), str(dados.get('observacoesImportantes')).upper()[:40])
 
     # 5. VOLUMES ALINHADOS AO BOTTOM
     vol_x = box_x + mm_to_pt(2.5)
@@ -556,6 +577,10 @@ def gerar_pdf_etiquetas(caminho_excel, operacao='importacao', arquivo_saida=None
     col_feira = encontrar_coluna(df, ['nome da feira', 'feira', 'evento', 'fair'])
     col_estande = encontrar_coluna(df, ['estande', 'stand', 'local', 'pavilhao'])
     col_consignatario = encontrar_coluna(df, ['consignatario da carga', 'consignatario', 'consignee', 'destinatario'])
+    col_consignee_addr = encontrar_coluna(df, ['endereco consignee', 'endereco do consignee', 'consignee address'])
+    col_exporter = encontrar_coluna(df, ['exporter', 'exportador'])
+    col_exporter_addr = encontrar_coluna(df, ['endereco exporter', 'endereco do exportador', 'exporter address'])
+    col_obs_imp = encontrar_coluna(df, ['observacoes importantes', 'obs importantes', 'important notes'])
     col_destino = encontrar_coluna(df, ['pais de destino', 'destino', 'cidade', 'country'])
     col_obs = encontrar_coluna(df, ['observacoes', 'observacao', 'notas'])
 
@@ -575,12 +600,21 @@ def gerar_pdf_etiquetas(caminho_excel, operacao='importacao', arquivo_saida=None
         feira = str(row[col_feira]) if col_feira and pd.notna(row[col_feira]) else ''
         estande = str(row[col_estande]) if col_estande and pd.notna(row[col_estande]) else ''
         consignatario = str(row[col_consignatario]) if col_consignatario and pd.notna(row[col_consignatario]) else ''
+        consignee_addr = str(row[col_consignee_addr]) if col_consignee_addr and pd.notna(row[col_consignee_addr]) else ''
+        exporter = str(row[col_exporter]) if col_exporter and pd.notna(row[col_exporter]) else ''
+        exporter_addr = str(row[col_exporter_addr]) if col_exporter_addr and pd.notna(row[col_exporter_addr]) else ''
+        obs_imp = str(row[col_obs_imp]) if col_obs_imp and pd.notna(row[col_obs_imp]) else ''
         destino = str(row[col_destino]) if col_destino and pd.notna(row[col_destino]) else ''
         observacoes = str(row[col_obs]) if col_obs and pd.notna(row[col_obs]) else ''
 
         for v in range(1, total_vol + 1):
             lista_etiquetas.append({
                 'expositor': expositor,
+                'consignee': consignatario or expositor,
+                'consigneeAddress': consignee_addr,
+                'exporter': exporter,
+                'exporterAddress': exporter_addr,
+                'observacoesImportantes': obs_imp,
                 'referencia': ref,
                 'volumeAtual': v,
                 'totalVolumes': total_vol,

@@ -159,35 +159,35 @@ async function generateA4PDF(labelsData, operationType, onProgress) {
     const isImport = operationType === 'importacao';
     const infoY = lineY + 1.5;
 
-    // Coluna Esquerda: Expositor e Evento/Destino
-    doc.setFont(fontName, 'bold');
-    doc.setFontSize(6.8);
-    doc.setTextColor(100, 116, 139);
-    doc.text('EXPOSITOR / EXHIBITOR (CLIENTE):', originX + 4, infoY + 3.5);
-
-    const expositorText = String(item.expositor || 'EXPOSITOR').toUpperCase();
-    doc.setFont(fontName, 'bold');
-    const expositorLines = doc.splitTextToSize(expositorText, 124);
-
-    let expositorFontSize = 13;
-    if (expositorLines.length > 2 || expositorText.length > 50) {
-      expositorFontSize = 10;
-    } else if (expositorLines.length === 2 || expositorText.length > 30) {
-      expositorFontSize = 11.5;
-    }
-    doc.setFontSize(expositorFontSize);
-    doc.setTextColor(15, 23, 42);
-
-    const lineSpacing = expositorFontSize * 0.42;
-    const maxLines = Math.min(expositorLines.length, 3);
-    let curExpY = infoY + 8;
-    for (let l = 0; l < maxLines; l++) {
-      doc.text(expositorLines[l], originX + 4, curExpY);
-      curExpY += lineSpacing;
-    }
-    const afterExpY = Math.max(curExpY + 1.5, infoY + 15);
-
     if (isImport) {
+      // Coluna Esquerda (Importação): Expositor e Evento/Destino
+      doc.setFont(fontName, 'bold');
+      doc.setFontSize(6.8);
+      doc.setTextColor(100, 116, 139);
+      doc.text('EXPOSITOR / EXHIBITOR (CLIENTE):', originX + 4, infoY + 3.5);
+
+      const expositorText = String(item.expositor || 'EXPOSITOR').toUpperCase();
+      doc.setFont(fontName, 'bold');
+      const expositorLines = doc.splitTextToSize(expositorText, 124);
+
+      let expositorFontSize = 13;
+      if (expositorLines.length > 2 || expositorText.length > 50) {
+        expositorFontSize = 10;
+      } else if (expositorLines.length === 2 || expositorText.length > 30) {
+        expositorFontSize = 11.5;
+      }
+      doc.setFontSize(expositorFontSize);
+      doc.setTextColor(15, 23, 42);
+
+      const lineSpacing = expositorFontSize * 0.42;
+      const maxLines = Math.min(expositorLines.length, 3);
+      let curExpY = infoY + 8;
+      for (let l = 0; l < maxLines; l++) {
+        doc.text(expositorLines[l], originX + 4, curExpY);
+        curExpY += lineSpacing;
+      }
+      const afterExpY = Math.max(curExpY + 1.5, infoY + 15);
+
       doc.setFont(fontName, 'bold');
       doc.setFontSize(6.5);
       doc.setTextColor(100, 116, 139);
@@ -211,29 +211,78 @@ async function generateA4PDF(labelsData, operationType, onProgress) {
         doc.text(`ESTANDE / LOCAL: ${item.estande}`.slice(0, 48), originX + 4, afterFeiraY);
       }
     } else {
-      // Exportação: RETURN + Campo aberto para escrever à mão na feira (3 linhas)
+      // Coluna Esquerda (Exportação): CONSIGNEE + Endereço e EXPORTER + Endereço
       doc.setFont(fontName, 'bold');
-      doc.setFontSize(7.5);
-      doc.setTextColor(234, 91, 39);
-      doc.text('RETURN:', originX + 4, afterExpY);
+      doc.setFontSize(6.8);
+      doc.setTextColor(100, 116, 139);
+      doc.text('CONSIGNEE:', originX + 4, infoY + 3.5);
 
-      const retBoxX = originX + 4;
-      const retBoxY = afterExpY + 1.5;
-      const retBoxW = 124;
-      const retBoxH = 14;
+      const consigneeText = String(item.consignee || item.expositor || 'CONSIGNEE').toUpperCase();
+      doc.setFont(fontName, 'bold');
+      const consigneeLines = doc.splitTextToSize(consigneeText, 124);
 
-      doc.setDrawColor(148, 163, 184);
-      doc.setFillColor(255, 255, 255);
-      doc.setLineWidth(0.35);
-      doc.setLineDashPattern([2, 2], 0);
-      doc.roundedRect(retBoxX, retBoxY, retBoxW, retBoxH, 1.5, 1.5, 'FD');
+      let consigneeFontSize = 12;
+      if (consigneeLines.length > 2 || consigneeText.length > 45) {
+        consigneeFontSize = 10;
+      } else if (consigneeLines.length === 2 || consigneeText.length > 25) {
+        consigneeFontSize = 11;
+      }
+      doc.setFontSize(consigneeFontSize);
+      doc.setTextColor(15, 23, 42);
 
-      // 2 Linhas pautadas internas para guiar escrita à mão
-      doc.setDrawColor(226, 232, 240);
-      doc.setLineWidth(0.2);
-      doc.line(retBoxX + 2, retBoxY + 4.6, retBoxX + retBoxW - 2, retBoxY + 4.6);
-      doc.line(retBoxX + 2, retBoxY + 9.2, retBoxX + retBoxW - 2, retBoxY + 9.2);
-      doc.setLineDashPattern([], 0); // reseta
+      let curConsY = infoY + 7.5;
+      for (let l = 0; l < Math.min(consigneeLines.length, 2); l++) {
+        doc.text(consigneeLines[l], originX + 4, curConsY);
+        curConsY += consigneeFontSize * 0.4;
+      }
+
+      // Endereço completo do Consignee (fonte menor que o nome)
+      if (item.consigneeAddress) {
+        doc.setFont(fontName, 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(71, 85, 105);
+        const addrLines = doc.splitTextToSize(String(item.consigneeAddress), 124);
+        for (let l = 0; l < Math.min(addrLines.length, 2); l++) {
+          doc.text(addrLines[l], originX + 4, curConsY);
+          curConsY += 3.2;
+        }
+      }
+
+      const exporterStartY = Math.max(curConsY + 1.5, infoY + 16);
+
+      // EXPORTER
+      doc.setFont(fontName, 'bold');
+      doc.setFontSize(6.8);
+      doc.setTextColor(100, 116, 139);
+      doc.text('EXPORTER:', originX + 4, exporterStartY);
+
+      const exporterText = String(item.exporter || 'EXPORTER').toUpperCase();
+      doc.setFont(fontName, 'bold');
+      const exporterLines = doc.splitTextToSize(exporterText, 124);
+      let exporterFontSize = 11;
+      if (exporterLines.length > 2 || exporterText.length > 45) {
+        exporterFontSize = 9.5;
+      }
+      doc.setFontSize(exporterFontSize);
+      doc.setTextColor(15, 23, 42);
+
+      let curExpY = exporterStartY + 4.2;
+      for (let l = 0; l < Math.min(exporterLines.length, 2); l++) {
+        doc.text(exporterLines[l], originX + 4, curExpY);
+        curExpY += exporterFontSize * 0.4;
+      }
+
+      // Endereço completo do Exporter (fonte menor que o nome)
+      if (item.exporterAddress) {
+        doc.setFont(fontName, 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(71, 85, 105);
+        const expAddrLines = doc.splitTextToSize(String(item.exporterAddress), 124);
+        for (let l = 0; l < Math.min(expAddrLines.length, 2); l++) {
+          doc.text(expAddrLines[l], originX + 4, curExpY);
+          curExpY += 3.2;
+        }
+      }
     }
 
     // Coluna Direita: Card de Observações / Notas com DTA e Nota Fiscal
@@ -261,13 +310,13 @@ async function generateA4PDF(labelsData, operationType, onProgress) {
       doc.text(obsLines[1], cardX + 3, cardY + 11.5);
     }
 
-    // Linha de DTA e NF dentro do card de observações
-    if (item.dta || item.notaFiscal) {
+    // Linha de DTA e NF dentro do card de observações (DTA exclusivo para importação)
+    if ((isImport && item.dta) || item.notaFiscal) {
       doc.setFont(fontName, 'bold');
       doc.setFontSize(6.5);
       doc.setTextColor(15, 23, 42);
       let extraText = '';
-      if (item.dta) extraText += `DTA: ${item.dta}   `;
+      if (isImport && item.dta) extraText += `DTA: ${item.dta}   `;
       if (item.notaFiscal) extraText += `NF: ${item.notaFiscal}`;
       doc.text(extraText.trim(), cardX + 3, cardY + 17.5);
     }
@@ -276,12 +325,27 @@ async function generateA4PDF(labelsData, operationType, onProgress) {
     // 4. DESTAQUE CENTRAL: "TEMPORARY", "DEFINITIVE", "EMPTY", "FULL" OU "FRAGILE"
     // ==========================================
     const statusText = (item.tipoCarga || 'Temporary').toUpperCase();
-    const centerY = originY + 80;
+    const hasObsImp = !isImport && Boolean(item.observacoesImportantes);
+    const centerY = originY + (hasObsImp ? 74 : 80);
 
     doc.setFont(fontName, 'bold');
-    doc.setFontSize(50);
+    doc.setFontSize(hasObsImp ? 46 : 50);
     doc.setTextColor(18, 22, 31);
     doc.text(statusText, originX + contentWidth / 2, centerY, { align: 'center' });
+
+    // Em Exportação: Campo de Observações Importantes centralizado, sem título, fonte igual ao Consignee
+    if (hasObsImp) {
+      doc.setFont(fontName, 'bold');
+      doc.setFontSize(12); // Tamanho da fonte igual ao Consignee
+      doc.setTextColor(15, 23, 42);
+      const obsImpText = String(item.observacoesImportantes).toUpperCase();
+      const obsImpLines = doc.splitTextToSize(obsImpText, contentWidth - 20);
+      let obsY = centerY + 7.5;
+      for (let l = 0; l < Math.min(obsImpLines.length, 2); l++) {
+        doc.text(obsImpLines[l], originX + contentWidth / 2, obsY, { align: 'center' });
+        obsY += 4.5;
+      }
+    }
 
     // ==========================================
     // 5. PARTE INFERIOR: VOLUMES LARGURA TOTAL ALINHADOS AO BOTTOM
@@ -435,34 +499,34 @@ async function generateThermal10x15PDF(labelsData, operationType, onProgress) {
     const isImport = operationType === 'importacao';
     const infoY = lineY + 1.2;
 
-    // Expositor (com quebra em até 3 linhas)
-    doc.setFont(fontName, 'bold');
-    doc.setFontSize(6.5);
-    doc.setTextColor(100, 116, 139);
-    doc.text('EXPOSITOR / EXHIBITOR (CLIENTE):', originX + 3, infoY + 3);
-
-    const expositorText = String(item.expositor || 'EXPOSITOR').toUpperCase();
-    doc.setFont(fontName, 'bold');
-    const expositorLines = doc.splitTextToSize(expositorText, contentWidth - 6);
-
-    let expFontSize = 9.5;
-    if (expositorLines.length > 2 || expositorText.length > 40) {
-      expFontSize = 8;
-    }
-    doc.setFontSize(expFontSize);
-    doc.setTextColor(15, 23, 42);
-
-    const lineSpacing = expFontSize * 0.42;
-    const maxLines = Math.min(expositorLines.length, 3);
-    let curExpY = infoY + 6.8;
-    for (let l = 0; l < maxLines; l++) {
-      doc.text(expositorLines[l], originX + 3, curExpY);
-      curExpY += lineSpacing;
-    }
-    const nextY = Math.max(curExpY + 1.5, infoY + 13.5);
-
-    // Feira ou Consignatário (com quebra em até 2 linhas)
     if (isImport) {
+      // Expositor (com quebra em até 3 linhas)
+      doc.setFont(fontName, 'bold');
+      doc.setFontSize(6.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text('EXPOSITOR / EXHIBITOR (CLIENTE):', originX + 3, infoY + 3);
+
+      const expositorText = String(item.expositor || 'EXPOSITOR').toUpperCase();
+      doc.setFont(fontName, 'bold');
+      const expositorLines = doc.splitTextToSize(expositorText, contentWidth - 6);
+
+      let expFontSize = 9.5;
+      if (expositorLines.length > 2 || expositorText.length > 40) {
+        expFontSize = 8;
+      }
+      doc.setFontSize(expFontSize);
+      doc.setTextColor(15, 23, 42);
+
+      const lineSpacing = expFontSize * 0.42;
+      const maxLines = Math.min(expositorLines.length, 3);
+      let curExpY = infoY + 6.8;
+      for (let l = 0; l < maxLines; l++) {
+        doc.text(expositorLines[l], originX + 3, curExpY);
+        curExpY += lineSpacing;
+      }
+      const nextY = Math.max(curExpY + 1.5, infoY + 13.5);
+
+      // Feira / Evento
       doc.setFont(fontName, 'bold');
       doc.setFontSize(6.5);
       doc.setTextColor(100, 116, 139);
@@ -486,29 +550,74 @@ async function generateThermal10x15PDF(labelsData, operationType, onProgress) {
         doc.text(`ESTANDE / LOCAL: ${item.estande}`.slice(0, 48), originX + 3, afterFeiraY);
       }
     } else {
-      // Exportação Térmica: RETURN + Caixa de escrita à mão na feira (3 linhas)
+      // Exportação Térmica: CONSIGNEE + Endereço e EXPORTER + Endereço
       doc.setFont(fontName, 'bold');
-      doc.setFontSize(7);
-      doc.setTextColor(234, 91, 39);
-      doc.text('RETURN:', originX + 3, nextY);
+      doc.setFontSize(6.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text('CONSIGNEE:', originX + 3, infoY + 3);
 
-      const retBoxX = originX + 3;
-      const retBoxY = nextY + 1.2;
-      const retBoxW = contentWidth - 6;
-      const retBoxH = 12.5;
+      const consigneeText = String(item.consignee || item.expositor || 'CONSIGNEE').toUpperCase();
+      doc.setFont(fontName, 'bold');
+      const consigneeLines = doc.splitTextToSize(consigneeText, contentWidth - 6);
 
-      doc.setDrawColor(148, 163, 184);
-      doc.setFillColor(255, 255, 255);
-      doc.setLineWidth(0.35);
-      doc.setLineDashPattern([2, 2], 0);
-      doc.roundedRect(retBoxX, retBoxY, retBoxW, retBoxH, 1.5, 1.5, 'FD');
+      let expFontSize = 9.5;
+      if (consigneeLines.length > 2 || consigneeText.length > 35) {
+        expFontSize = 8.5;
+      }
+      doc.setFontSize(expFontSize);
+      doc.setTextColor(15, 23, 42);
 
-      // 2 Linhas pautadas internas
-      doc.setDrawColor(226, 232, 240);
-      doc.setLineWidth(0.2);
-      doc.line(retBoxX + 2, retBoxY + 4.1, retBoxX + retBoxW - 2, retBoxY + 4.1);
-      doc.line(retBoxX + 2, retBoxY + 8.2, retBoxX + retBoxW - 2, retBoxY + 8.2);
-      doc.setLineDashPattern([], 0); // reseta
+      let curExpY = infoY + 6.5;
+      for (let l = 0; l < Math.min(consigneeLines.length, 2); l++) {
+        doc.text(consigneeLines[l], originX + 3, curExpY);
+        curExpY += expFontSize * 0.42;
+      }
+
+      if (item.consigneeAddress) {
+        doc.setFont(fontName, 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(71, 85, 105);
+        const addrLines = doc.splitTextToSize(String(item.consigneeAddress), contentWidth - 6);
+        for (let l = 0; l < Math.min(addrLines.length, 2); l++) {
+          doc.text(addrLines[l], originX + 3, curExpY);
+          curExpY += 3;
+        }
+      }
+
+      const exporterStartY = Math.max(curExpY + 1.2, infoY + 14.5);
+
+      // EXPORTER
+      doc.setFont(fontName, 'bold');
+      doc.setFontSize(6.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text('EXPORTER:', originX + 3, exporterStartY);
+
+      const exporterText = String(item.exporter || 'EXPORTER').toUpperCase();
+      doc.setFont(fontName, 'bold');
+      const exporterLines = doc.splitTextToSize(exporterText, contentWidth - 6);
+      let exporterFontSize = 9;
+      if (exporterLines.length > 2 || exporterText.length > 35) {
+        exporterFontSize = 8;
+      }
+      doc.setFontSize(exporterFontSize);
+      doc.setTextColor(15, 23, 42);
+
+      let curExpY2 = exporterStartY + 3.8;
+      for (let l = 0; l < Math.min(exporterLines.length, 2); l++) {
+        doc.text(exporterLines[l], originX + 3, curExpY2);
+        curExpY2 += exporterFontSize * 0.42;
+      }
+
+      if (item.exporterAddress) {
+        doc.setFont(fontName, 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(71, 85, 105);
+        const expAddrLines = doc.splitTextToSize(String(item.exporterAddress), contentWidth - 6);
+        for (let l = 0; l < Math.min(expAddrLines.length, 2); l++) {
+          doc.text(expAddrLines[l], originX + 3, curExpY2);
+          curExpY2 += 3;
+        }
+      }
     }
 
     // Card de Observações / Notas
@@ -536,12 +645,12 @@ async function generateThermal10x15PDF(labelsData, operationType, onProgress) {
       doc.text(obsLines[1], cardX + 2.5, cardY + 9.8);
     }
 
-    if (item.dta || item.notaFiscal) {
+    if ((isImport && item.dta) || item.notaFiscal) {
       doc.setFont(fontName, 'bold');
       doc.setFontSize(6);
       doc.setTextColor(15, 23, 42);
       let extraText = '';
-      if (item.dta) extraText += `DTA: ${item.dta}   `;
+      if (isImport && item.dta) extraText += `DTA: ${item.dta}   `;
       if (item.notaFiscal) extraText += `NF: ${item.notaFiscal}`;
       doc.text(extraText.trim(), cardX + 2.5, cardY + 11.6);
     }
@@ -550,12 +659,27 @@ async function generateThermal10x15PDF(labelsData, operationType, onProgress) {
     // 3. DESTAQUE CENTRAL: STATUS DA CARGA (36pt)
     // ==========================================
     const statusText = (item.tipoCarga || 'Temporary').toUpperCase();
-    const centerY = originY + 84;
+    const hasObsImp = !isImport && Boolean(item.observacoesImportantes);
+    const centerY = originY + (hasObsImp ? 80 : 84);
 
     doc.setFont(fontName, 'bold');
-    doc.setFontSize(36);
+    doc.setFontSize(hasObsImp ? 32 : 36);
     doc.setTextColor(18, 22, 31);
     doc.text(statusText, originX + contentWidth / 2, centerY, { align: 'center' });
+
+    // Em Exportação: Observações Importantes centralizado, sem título, fonte igual ao Consignee
+    if (hasObsImp) {
+      doc.setFont(fontName, 'bold');
+      doc.setFontSize(9.5); // Tamanho da fonte igual ao Consignee na térmica
+      doc.setTextColor(15, 23, 42);
+      const obsImpText = String(item.observacoesImportantes).toUpperCase();
+      const obsImpLines = doc.splitTextToSize(obsImpText, contentWidth - 10);
+      let obsY = centerY + 6.5;
+      for (let l = 0; l < Math.min(obsImpLines.length, 2); l++) {
+        doc.text(obsImpLines[l], originX + contentWidth / 2, obsY, { align: 'center' });
+        obsY += 3.8;
+      }
+    }
 
     // ==========================================
     // 4. PARTE INFERIOR: VOLUMES ALINHADOS AO BOTTOM
