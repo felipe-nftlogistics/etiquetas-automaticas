@@ -32,12 +32,33 @@ def normalizar_coluna(col_name):
     c = c.replace('á', 'a').replace('ã', 'a').replace('é', 'e').replace('í', 'i').replace('ó', 'o').replace('ú', 'u').replace('ç', 'c')
     return ''.join(ch for ch in c if ch.isalnum())
 
-def encontrar_coluna(df, nomes_possiveis):
-    for nome in nomes_possiveis:
-        norm_alvo = normalizar_coluna(nome)
-        for col in df.columns:
-            if norm_alvo in normalizar_coluna(col) or normalizar_coluna(col) in norm_alvo:
+def encontrar_coluna(df, exact_list, fuzzy_list=None, exclude_list=None):
+    if df is None or len(df.columns) == 0:
+        return None
+    if fuzzy_list is None:
+        fuzzy_list = []
+    if exclude_list is None:
+        exclude_list = []
+
+    cols_norm = [(col, normalizar_coluna(col)) for col in df.columns]
+
+    # 1. Match Exato (respeitando a prioridade de exact_list)
+    for ex in exact_list:
+        norm_target = normalizar_coluna(ex)
+        for col, norm_col in cols_norm:
+            if norm_col == norm_target:
                 return col
+
+    # 2. Match Parcial (respeitando a prioridade de fuzzy_list e filtros de exclude_list)
+    for fz in fuzzy_list:
+        norm_fz = normalizar_coluna(fz)
+        for col, norm_col in cols_norm:
+            has_exclude = any(normalizar_coluna(exc) in norm_col for exc in exclude_list if normalizar_coluna(exc))
+            if has_exclude:
+                continue
+            if norm_fz in norm_col:
+                return col
+
     return None
 
 def normalizar_tipo_carga(val, padrao='Temporary'):
@@ -582,25 +603,130 @@ def gerar_pdf_etiquetas(caminho_excel, operacao='importacao', arquivo_saida=None
 
     df = pd.read_excel(caminho_excel)
 
-    col_expositor = encontrar_coluna(df, ['nome do expositor', 'expositor', 'cliente', 'exhibitor'])
-    col_volumes = encontrar_coluna(df, ['quantidade de volumes', 'qtd volumes', 'volumes', 'total volumes', 'volume', 'qtd'])
-    col_ref = encontrar_coluna(df, ['referencia interna', 'referencia', 'ref interna', 'ref nft', 'processo', 'ref'])
-    col_tipo = encontrar_coluna(df, ['tipo de carga', 'tipo carga', 'tipo', 'status', 'categoria', 'category', 'regime', 'modalidade'])
-    col_feira = encontrar_coluna(df, ['nome da feira', 'feira', 'evento', 'fair'])
-    col_estande = encontrar_coluna(df, ['estande', 'stand', 'local', 'pavilhao'])
-    col_consignatario = encontrar_coluna(df, ['consignatario da carga', 'consignatario', 'consignee', 'destinatario'])
-    col_consignee_addr = encontrar_coluna(df, ['endereco consignee', 'endereco do consignee', 'consignee address'])
-    col_exporter = encontrar_coluna(df, ['exporter', 'exportador'])
-    col_exporter_addr = encontrar_coluna(df, ['endereco exporter', 'endereco do exportador', 'exporter address'])
-    col_obs_imp = encontrar_coluna(df, ['observacoes importantes', 'obs importantes', 'important notes'])
-    col_booking = encontrar_coluna(df, ['booking/reserva', 'booking / reserva', 'booking', 'reserva', 'bkg'])
-    col_destino = encontrar_coluna(df, ['pais de destino', 'destino', 'cidade', 'country'])
-    col_obs = encontrar_coluna(df, ['observacoes', 'observacao', 'notas'])
+    ADDRESS_WORDS = ['endereco', 'address', 'addr', 'morada', 'rua', 'street', 'localizacao']
+    CONSIGNEE_WORDS = ['consignee', 'consignatario', 'destinatario']
+    EXPORTER_WORDS = ['exporter', 'exportador', 'shipper', 'remetente']
+
+    col_volumes = encontrar_coluna(
+        df,
+        ['quantidade de volumes', 'qtd volumes', 'total volumes', 'volumes', 'volume', 'qtd', 'caixas', 'boxes', 'packages'],
+        ['quantidadedevolumes', 'qtdvolumes', 'totalvolumes', 'volumes', 'volume', 'qtd']
+    )
+    col_ref = encontrar_coluna(
+        df,
+        ['referencia interna', 'referencia', 'ref interna', 'ref nft', 'processo', 'ref', 'internal ref', 'process'],
+        ['referenciainterna', 'refinterna', 'referencia', 'processo']
+    )
+    col_tipo = encontrar_coluna(
+        df,
+        ['categoria', 'category', 'tipo de carga', 'tipo carga', 'tipo', 'status', 'regime', 'modalidade', 'condicao', 'condition', 'status central'],
+        ['tipocarga', 'categoria', 'category', 'regime', 'modalidade']
+    )
+    col_obs = encontrar_coluna(
+        df,
+        ['observacoes', 'observacao', 'notas', 'notes', 'remarks', 'detalhes'],
+        ['observacoes', 'observacao', 'notas', 'notes', 'remarks'],
+        ['importante', 'important']
+    )
+
+    if operacao == 'importacao':
+        col_expositor = encontrar_coluna(
+            df,
+            ['nome do expositor', 'expositor', 'cliente', 'exhibitor', 'shipper', 'empresa', 'remetente'],
+            ['expositor', 'exhibitor', 'cliente'],
+            ['feira', 'estande', 'endereco']
+        )
+        col_feira = encontrar_coluna(
+            df,
+            ['nome da feira', 'feira', 'evento', 'nome do evento', 'fair', 'event', 'trade show', 'exposicao'],
+            ['nomedafeira', 'feira', 'evento', 'fair', 'event']
+        )
+        col_estande = encontrar_coluna(
+            df,
+            ['estande / local', 'estande', 'stand', 'booth', 'pavilhao', 'local'],
+            ['estande', 'stand', 'booth', 'pavilhao']
+        )
+        col_consignatario = None
+        col_consignee_addr = None
+        col_exporter = None
+        col_exporter_addr = None
+        col_obs_imp = None
+        col_booking = None
+        col_destino = None
+    else:
+        # EXPORTAÇÃO
+        col_consignatario = encontrar_coluna(
+            df,
+            ['consignee', 'nome do consignee', 'consignee name', 'consignatario da carga', 'consignatario', 'destinatario', 'nome do expositor', 'expositor', 'cliente'],
+            ['consignee', 'consignatario', 'destinatario'],
+            ADDRESS_WORDS + EXPORTER_WORDS
+        ) or encontrar_coluna(
+            df,
+            ['nome do expositor', 'expositor', 'cliente'],
+            ['expositor', 'cliente'],
+            ADDRESS_WORDS + EXPORTER_WORDS
+        )
+
+        col_consignee_addr = encontrar_coluna(
+            df,
+            [
+                'endereco consignee', 'endereco do consignee', 'endereco completo consignee',
+                'consignee address', 'address consignee', 'consignee full address',
+                'endereco consignatario', 'endereco do consignatario', 'endereco completo consignatario',
+                'endereco destinatario', 'endereco do destinatario',
+                'endereco', 'address'
+            ],
+            ['enderecoconsignee', 'consigneeaddress', 'enderecoconsignatario', 'enderecodestinatario'],
+            EXPORTER_WORDS
+        )
+
+        col_exporter = encontrar_coluna(
+            df,
+            ['exporter', 'nome do exporter', 'exporter name', 'exportador', 'nome do exportador', 'shipper', 'shipper name', 'remetente', 'nome do remetente'],
+            ['exporter', 'exportador', 'shipper', 'remetente'],
+            ADDRESS_WORDS + CONSIGNEE_WORDS
+        ) or (
+            encontrar_coluna(df, ['nome do expositor', 'expositor'], ['expositor'], ADDRESS_WORDS + CONSIGNEE_WORDS)
+            if col_consignatario and normalizar_coluna(col_consignatario).find('consignatario') != -1
+            else None
+        )
+
+        col_exporter_addr = encontrar_coluna(
+            df,
+            [
+                'endereco exporter', 'endereco do exporter', 'endereco completo exporter',
+                'exporter address', 'address exporter', 'exporter full address',
+                'endereco exportador', 'endereco do exportador', 'endereco completo exportador',
+                'endereco shipper', 'shipper address', 'address shipper',
+                'endereco remetente', 'endereco do remetente'
+            ],
+            ['enderecoexporter', 'exporteraddress', 'enderecoexportador', 'enderecoshipper', 'enderecoremetente'],
+            CONSIGNEE_WORDS
+        )
+
+        col_obs_imp = encontrar_coluna(
+            df,
+            ['observacoes importantes', 'observacao importante', 'important notes', 'obs importantes', 'obs importante', 'nota importante'],
+            ['observacoesimportantes', 'observacaoimportante', 'importantnotes', 'obsimportantes', 'notaimportante']
+        )
+        col_booking = encontrar_coluna(
+            df,
+            ['booking/reserva', 'booking / reserva', 'booking', 'reserva', 'bkg', 'booking no', 'reserva no', 'numero da reserva', 'numero de reserva'],
+            ['booking', 'reserva', 'bkg']
+        )
+        col_destino = encontrar_coluna(
+            df,
+            ['pais de destino', 'destino', 'cidade', 'country', 'destination'],
+            ['paisdedestino', 'destino', 'country']
+        )
+        col_expositor = col_consignatario or col_exporter
+        col_feira = None
+        col_estande = None
 
     lista_etiquetas = []
     for idx, row in df.iterrows():
-        expositor = str(row[col_expositor]) if col_expositor and pd.notna(row[col_expositor]) else f"Expositor {idx+1}"
-        ref = str(row[col_ref]) if col_ref and pd.notna(row[col_ref]) else f"NFT-{idx+1:04d}"
+        expositor = str(row[col_expositor]).strip() if col_expositor and pd.notna(row[col_expositor]) else f"Expositor {idx+1}"
+        ref = str(row[col_ref]).strip() if col_ref and pd.notna(row[col_ref]) else f"NFT-{idx+1:04d}"
         
         try:
             total_vol = int(row[col_volumes]) if col_volumes else 1
@@ -610,16 +736,22 @@ def gerar_pdf_etiquetas(caminho_excel, operacao='importacao', arquivo_saida=None
             total_vol = 1
 
         tipo_carga = normalizar_tipo_carga(row[col_tipo], padrao=tipo_padrao) if col_tipo else tipo_padrao
-        feira = str(row[col_feira]) if col_feira and pd.notna(row[col_feira]) else ''
-        estande = str(row[col_estande]) if col_estande and pd.notna(row[col_estande]) else ''
-        consignatario = str(row[col_consignatario]) if col_consignatario and pd.notna(row[col_consignatario]) else ''
-        consignee_addr = str(row[col_consignee_addr]) if col_consignee_addr and pd.notna(row[col_consignee_addr]) else ''
-        exporter = str(row[col_exporter]) if col_exporter and pd.notna(row[col_exporter]) else ''
-        exporter_addr = str(row[col_exporter_addr]) if col_exporter_addr and pd.notna(row[col_exporter_addr]) else ''
-        obs_imp = str(row[col_obs_imp]) if col_obs_imp and pd.notna(row[col_obs_imp]) else ''
-        booking = str(row[col_booking]) if col_booking and pd.notna(row[col_booking]) else ''
-        destino = str(row[col_destino]) if col_destino and pd.notna(row[col_destino]) else ''
-        observacoes = str(row[col_obs]) if col_obs and pd.notna(row[col_obs]) else ''
+        feira = str(row[col_feira]).strip() if col_feira and pd.notna(row[col_feira]) else ''
+        estande = str(row[col_estande]).strip() if col_estande and pd.notna(row[col_estande]) else ''
+        consignatario = str(row[col_consignatario]).strip() if col_consignatario and pd.notna(row[col_consignatario]) else ''
+        consignee_addr = str(row[col_consignee_addr]).strip() if col_consignee_addr and pd.notna(row[col_consignee_addr]) else ''
+        exporter = str(row[col_exporter]).strip() if col_exporter and pd.notna(row[col_exporter]) else ''
+        exporter_addr = str(row[col_exporter_addr]).strip() if col_exporter_addr and pd.notna(row[col_exporter_addr]) else ''
+        obs_imp = str(row[col_obs_imp]).strip() if col_obs_imp and pd.notna(row[col_obs_imp]) else ''
+        booking = str(row[col_booking]).strip() if col_booking and pd.notna(row[col_booking]) else ''
+        destino = str(row[col_destino]).strip() if col_destino and pd.notna(row[col_destino]) else ''
+        observacoes = str(row[col_obs]).strip() if col_obs and pd.notna(row[col_obs]) else ''
+
+        # Trava anti-duplicação se endereço apontar para mesma coluna do nome
+        if col_consignatario and col_consignee_addr and col_consignatario == col_consignee_addr:
+            consignee_addr = ''
+        if col_exporter and col_exporter_addr and col_exporter == col_exporter_addr:
+            exporter_addr = ''
 
         for v in range(1, total_vol + 1):
             lista_etiquetas.append({
