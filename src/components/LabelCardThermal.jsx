@@ -141,6 +141,16 @@ export default function LabelCardThermal({ item, operationType, isPrintMode = fa
       {/* 3. DESTAQUE CENTRAL: STATUS DA CARGA */}
       {/* ========================================================= */}
       <div className="my-auto py-1 text-center w-full flex flex-col items-center justify-center">
+        {/* Em Exportação: Campo BOOKING/RESERVA centralizado, acima da categoria com fonte menor que a categoria */}
+        {!isImport && item.booking && (
+          <div className="w-full text-center mb-0.5 sm:mb-1">
+            <span className="inline-flex items-center justify-center gap-1 text-[10px] sm:text-[11px] font-black text-slate-900 uppercase font-mono tracking-wide">
+              <span className="text-[8.5px] sm:text-[9.5px] font-bold text-slate-500">BOOKING/RESERVA:</span>
+              <span>{item.booking}</span>
+            </span>
+          </div>
+        )}
+
         <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight uppercase leading-none">
           {tipoCarga}
         </h2>

@@ -326,10 +326,20 @@ async function generateA4PDF(labelsData, operationType, onProgress) {
     // ==========================================
     const statusText = (item.tipoCarga || 'Temporary').toUpperCase();
     const hasObsImp = !isImport && Boolean(item.observacoesImportantes);
-    const centerY = originY + (hasObsImp ? 74 : 80);
+    const hasBooking = !isImport && Boolean(item.booking);
+    const centerY = originY + (hasObsImp ? (hasBooking ? 77 : 74) : (hasBooking ? 82 : 80));
+
+    // Em Exportação: Campo BOOKING/RESERVA centralizado, acima da categoria com fonte menor
+    if (hasBooking) {
+      doc.setFont(fontName, 'bold');
+      doc.setFontSize(10.5);
+      doc.setTextColor(71, 85, 105);
+      const bkgText = `BOOKING/RESERVA: ${String(item.booking).toUpperCase()}`;
+      doc.text(bkgText, originX + contentWidth / 2, centerY - (hasObsImp ? 13 : 14), { align: 'center' });
+    }
 
     doc.setFont(fontName, 'bold');
-    doc.setFontSize(hasObsImp ? 46 : 50);
+    doc.setFontSize(hasObsImp ? (hasBooking ? 42 : 46) : (hasBooking ? 46 : 50));
     doc.setTextColor(18, 22, 31);
     doc.text(statusText, originX + contentWidth / 2, centerY, { align: 'center' });
 
@@ -660,10 +670,20 @@ async function generateThermal10x15PDF(labelsData, operationType, onProgress) {
     // ==========================================
     const statusText = (item.tipoCarga || 'Temporary').toUpperCase();
     const hasObsImp = !isImport && Boolean(item.observacoesImportantes);
-    const centerY = originY + (hasObsImp ? 80 : 84);
+    const hasBooking = !isImport && Boolean(item.booking);
+    const centerY = originY + (hasObsImp ? (hasBooking ? 81 : 80) : (hasBooking ? 85 : 84));
+
+    // Em Exportação Térmica: Campo BOOKING/RESERVA centralizado, acima da categoria com fonte menor
+    if (hasBooking) {
+      doc.setFont(fontName, 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(71, 85, 105);
+      const bkgText = `BOOKING/RESERVA: ${String(item.booking).toUpperCase()}`;
+      doc.text(bkgText, originX + contentWidth / 2, centerY - (hasObsImp ? 9.5 : 10), { align: 'center' });
+    }
 
     doc.setFont(fontName, 'bold');
-    doc.setFontSize(hasObsImp ? 32 : 36);
+    doc.setFontSize(hasObsImp ? (hasBooking ? 29 : 32) : (hasBooking ? 32 : 36));
     doc.setTextColor(18, 22, 31);
     doc.text(statusText, originX + contentWidth / 2, centerY, { align: 'center' });
 

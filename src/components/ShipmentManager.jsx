@@ -41,6 +41,7 @@ export default function ShipmentManager({
     consigneeAddress: '',
     exporter: '',
     exporterAddress: '',
+    booking: '',
     observacoesImportantes: '',
     volumes: 40,
     referencia: `NFT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -62,6 +63,7 @@ export default function ShipmentManager({
     consigneeAddress: '',
     exporter: '',
     exporterAddress: '',
+    booking: '',
     observacoesImportantes: '',
     volumes: 1,
     referencia: '',
@@ -155,6 +157,7 @@ export default function ShipmentManager({
       consigneeAddress: item.consigneeAddress || '',
       exporter: item.exporter || '',
       exporterAddress: item.exporterAddress || '',
+      booking: item.booking || '',
       observacoesImportantes: item.observacoesImportantes || '',
       volumes: item.volumes || 1,
       referencia: item.referencia || '',
@@ -186,6 +189,7 @@ export default function ShipmentManager({
             consigneeAddress: isImport ? '' : editForm.consigneeAddress.trim(),
             exporter: isImport ? '' : editForm.exporter.trim(),
             exporterAddress: isImport ? '' : editForm.exporterAddress.trim(),
+            booking: isImport ? '' : (editForm.booking || '').trim(),
             observacoesImportantes: isImport ? '' : editForm.observacoesImportantes.trim(),
             volumes: Math.max(1, parseInt(editForm.volumes, 10) || 1),
             referencia: editForm.referencia.trim(),
@@ -220,6 +224,7 @@ export default function ShipmentManager({
       consigneeAddress: isImport ? '' : manualForm.consigneeAddress.trim(),
       exporter: isImport ? '' : manualForm.exporter.trim(),
       exporterAddress: isImport ? '' : manualForm.exporterAddress.trim(),
+      booking: isImport ? '' : (manualForm.booking || '').trim(),
       observacoesImportantes: isImport ? '' : manualForm.observacoesImportantes.trim(),
       volumes: Math.max(1, parseInt(manualForm.volumes, 10) || 1),
       referencia: manualForm.referencia.trim(),
@@ -243,6 +248,7 @@ export default function ShipmentManager({
       consigneeAddress: '',
       exporter: '',
       exporterAddress: '',
+      booking: '',
       observacoesImportantes: '',
       volumes: 40,
       referencia: `NFT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -427,6 +433,7 @@ export default function ShipmentManager({
                   <th className="py-3 px-4 w-12 text-center">Sel.</th>
                   <th className="py-3 px-4">{isImport ? 'Expositor / Cliente' : 'Consignee & Endereço'}</th>
                   <th className="py-3 px-4">{isImport ? 'Feira / Estande' : 'Exporter & Endereço'}</th>
+                  {!isImport && <th className="py-3 px-3 w-32 text-center">Booking/Reserva</th>}
                   <th className="py-3 px-3 w-36 text-center">Categoria</th>
                   {!isImport && <th className="py-3 px-4 w-44">Obs. Importantes</th>}
                   <th className="py-3 px-4 w-28 text-center">Qtd Volumes</th>
@@ -523,6 +530,19 @@ export default function ShipmentManager({
                             className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-[#ea5b27] focus:bg-white text-[11px] text-slate-500 rounded px-1.5 py-0.5 outline-hidden"
                           />
                         </div>
+                      </td>
+                    )}
+
+                    {/* Booking/Reserva (Apenas Exportação, acima da Categoria na etiqueta) */}
+                    {!isImport && (
+                      <td className="py-3 px-3 text-center">
+                        <input
+                          type="text"
+                          value={row.booking || ''}
+                          placeholder="Nº Booking"
+                          onChange={(e) => handleUpdateField(row.id, 'booking', e.target.value)}
+                          className="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-[#ea5b27] focus:bg-white text-xs font-mono font-bold text-slate-900 rounded px-1.5 py-0.5 outline-hidden text-center"
+                        />
                       </td>
                     )}
 
@@ -789,6 +809,25 @@ export default function ShipmentManager({
                 </div>
               </div>
 
+              {/* Em Exportação: Campo BOOKING/RESERVA (Acima da Categoria) */}
+              {!isImport && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    BOOKING / RESERVA
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ex: BKG-2026-98765"
+                    value={manualForm.booking}
+                    onChange={(e) => setManualForm({ ...manualForm, booking: e.target.value })}
+                    className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-mono font-bold focus:border-[#ea5b27] focus:ring-1 focus:ring-orange-500 outline-hidden"
+                  />
+                  <span className="text-[10px] text-slate-500 mt-0.5 block">
+                    Aparecerá centralizado logo acima da Categoria na etiqueta com fonte menor.
+                  </span>
+                </div>
+              )}
+
               {/* Opção Central Solicitada: Temporary, Definitive, Empty, Full, Fragile */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
@@ -1041,6 +1080,25 @@ export default function ShipmentManager({
                   />
                 </div>
               </div>
+
+              {/* Em Exportação: Campo BOOKING/RESERVA (Acima da Categoria) */}
+              {!isImport && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    BOOKING / RESERVA
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ex: BKG-2026-98765"
+                    value={editForm.booking}
+                    onChange={(e) => setEditForm({ ...editForm, booking: e.target.value })}
+                    className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-mono font-bold focus:border-[#ea5b27] focus:ring-1 focus:ring-orange-500 outline-hidden"
+                  />
+                  <span className="text-[10px] text-slate-500 mt-0.5 block">
+                    Aparecerá centralizado logo acima da Categoria na etiqueta com fonte menor.
+                  </span>
+                </div>
+              )}
 
               {/* Categoria */}
               <div>

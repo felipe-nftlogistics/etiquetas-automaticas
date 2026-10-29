@@ -55,6 +55,7 @@ export default function Dashboard({ session, onLogout }) {
           consigneeAddress: ship.consigneeAddress || '',
           exporter: ship.exporter || '',
           exporterAddress: ship.exporterAddress || '',
+          booking: ship.booking || '',
           observacoesImportantes: ship.observacoesImportantes || '',
           referencia: ship.referencia,
           tipoCarga: ship.tipoCarga || 'Temporary',

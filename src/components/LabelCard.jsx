@@ -149,6 +149,16 @@ export default function LabelCard({ item, operationType, isPrintMode = false }) 
       {/* 3. DESTAQUE CENTRAL: "TEMPORARY", "DEFINITIVE", "EMPTY", "FULL", "FRAGILE" */}
       {/* ========================================================= */}
       <div className="my-auto py-1 sm:py-2 text-center w-full flex flex-col items-center justify-center">
+        {/* Em Exportação: Campo BOOKING/RESERVA centralizado, acima da categoria com fonte menor que a categoria */}
+        {!isImport && item.booking && (
+          <div className="w-full text-center mb-1 sm:mb-1.5">
+            <span className="inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-black text-slate-900 uppercase font-mono tracking-wide">
+              <span className="text-[10px] sm:text-xs font-bold text-slate-500">BOOKING/RESERVA:</span>
+              <span>{item.booking}</span>
+            </span>
+          </div>
+        )}
+
         <h2 className="text-5xl sm:text-6xl font-black text-slate-900 tracking-tight uppercase leading-none">
           {tipoCarga}
         </h2>

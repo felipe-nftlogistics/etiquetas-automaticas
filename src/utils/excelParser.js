@@ -123,6 +123,7 @@ export function parseExcelFile(file, operationType) {
           let consigneeAddress = '';
           let exporter = '';
           let exporterAddress = '';
+          let booking = '';
           let observacoesImportantes = '';
 
           if (operationType === 'importacao') {
@@ -133,6 +134,7 @@ export function parseExcelFile(file, operationType) {
             consigneeAddress = findValue(['endereco consignee', 'endereco completo consignee', 'consignee address', 'endereco do consignee', 'address consignee', 'endereco']);
             exporter = findValue(['exporter', 'nome do exporter', 'exportador', 'nome do exportador', 'shipper', 'remetente']);
             exporterAddress = findValue(['endereco exporter', 'endereco completo exporter', 'exporter address', 'endereco do exportador', 'address exporter']);
+            booking = findValue(['booking/reserva', 'booking / reserva', 'booking', 'reserva', 'numero da reserva', 'numero de reserva', 'bkg', 'booking no', 'reserva no']);
             observacoesImportantes = findValue(['observacoes importantes', 'observacao importante', 'important notes', 'obs importantes', 'obs importante', 'nota importante']);
           }
 
@@ -144,6 +146,7 @@ export function parseExcelFile(file, operationType) {
             consigneeAddress: sanitizeInput(consigneeAddress),
             exporter: sanitizeInput(exporter),
             exporterAddress: sanitizeInput(exporterAddress),
+            booking: sanitizeInput(booking),
             observacoesImportantes: sanitizeInput(observacoesImportantes),
             volumes: volumes,
             referencia: sanitizeInput(referencia || `NFT-${new Date().getFullYear()}-${String(index + 1).padStart(4, '0')}`),
@@ -218,6 +221,7 @@ export function downloadExcelTemplate(operationType) {
       'Endereço Consignee',
       'Exporter',
       'Endereço Exporter',
+      'Booking/Reserva',
       'Categoria',
       'Observações Importantes',
       'Quantidade de Volumes',
@@ -230,6 +234,7 @@ export function downloadExcelTemplate(operationType) {
         'Endereço Consignee': 'Otto-Hahn-Ring 6, 81739 Munich, Germany',
         'Exporter': 'Siemens Brasil Ltda',
         'Endereço Exporter': 'Av. Mutinga, 3800 - Pirituba, São Paulo - SP, Brasil',
+        'Booking/Reserva': 'BKG-2026-98765',
         'Categoria': 'Temporary',
         'Observações Importantes': 'RETORNO DE DEMONSTRAÇÃO',
         'Quantidade de Volumes': 40,
@@ -241,6 +246,7 @@ export function downloadExcelTemplate(operationType) {
         'Endereço Consignee': 'Maria-Theresien-Str. 23, 97816 Lohr am Main, Germany',
         'Exporter': 'Bosch Rexroth Brasil',
         'Endereço Exporter': 'Av. Tégula, 888 - Atibaia - SP, Brasil',
+        'Booking/Reserva': 'BKG-2026-12345',
         'Categoria': 'Empty',
         'Observações Importantes': 'VOLUMES VAZIOS',
         'Quantidade de Volumes': 12,

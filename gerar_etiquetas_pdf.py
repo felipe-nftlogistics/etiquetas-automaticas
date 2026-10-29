@@ -254,10 +254,16 @@ def desenhar_etiqueta_a5(c, origin_x, origin_y, dados, operacao, logo_full_path,
 
     # 5. O DESTAQUE CENTRAL: "TEMPORARY", "DEFINITIVE", "EMPTY", "FULL" OU "FRAGILE"
     has_obs_imp = (not is_import) and bool(dados.get('observacoesImportantes'))
+    has_booking = (not is_import) and bool(dados.get('booking'))
     center_y = box_y + mm_to_pt(58 if has_obs_imp else 55)
     tipo_carga = str(dados.get('tipoCarga', 'TEMPORARY')).upper()
 
-    c.setFont('Helvetica-Bold', 46 if has_obs_imp else 52)
+    if has_booking:
+        c.setFont('Helvetica-Bold', 10)
+        c.setFillColor(COLOR_TEXT_MUTED)
+        c.drawCentredString(box_x + box_w / 2, center_y + mm_to_pt(11), f"BOOKING/RESERVA: {str(dados.get('booking')).upper()}")
+
+    c.setFont('Helvetica-Bold', 42 if (has_obs_imp and has_booking) else (46 if has_obs_imp else 52))
     c.setFillColor(COLOR_NFT_DARK)
     c.drawCentredString(box_x + box_w / 2, center_y, tipo_carga)
 
@@ -507,10 +513,16 @@ def desenhar_etiqueta_termica_10x15(c, origin_x, origin_y, dados, operacao, logo
 
     # 4. DESTAQUE CENTRAL (36pt)
     has_obs_imp = (not is_import) and bool(dados.get('observacoesImportantes'))
+    has_booking = (not is_import) and bool(dados.get('booking'))
     center_y = box_y + mm_to_pt(51 if has_obs_imp else 49)
     tipo_carga = str(dados.get('tipoCarga', 'TEMPORARY')).upper()
 
-    c.setFont('Helvetica-Bold', 32 if has_obs_imp else 36)
+    if has_booking:
+        c.setFont('Helvetica-Bold', 8)
+        c.setFillColor(COLOR_TEXT_MUTED)
+        c.drawCentredString(box_x + box_w / 2, center_y + mm_to_pt(8), f"BOOKING/RESERVA: {str(dados.get('booking')).upper()}")
+
+    c.setFont('Helvetica-Bold', 29 if (has_obs_imp and has_booking) else (32 if has_obs_imp else 36))
     c.setFillColor(COLOR_NFT_DARK)
     c.drawCentredString(box_x + box_w / 2, center_y, tipo_carga)
 
@@ -581,6 +593,7 @@ def gerar_pdf_etiquetas(caminho_excel, operacao='importacao', arquivo_saida=None
     col_exporter = encontrar_coluna(df, ['exporter', 'exportador'])
     col_exporter_addr = encontrar_coluna(df, ['endereco exporter', 'endereco do exportador', 'exporter address'])
     col_obs_imp = encontrar_coluna(df, ['observacoes importantes', 'obs importantes', 'important notes'])
+    col_booking = encontrar_coluna(df, ['booking/reserva', 'booking / reserva', 'booking', 'reserva', 'bkg'])
     col_destino = encontrar_coluna(df, ['pais de destino', 'destino', 'cidade', 'country'])
     col_obs = encontrar_coluna(df, ['observacoes', 'observacao', 'notas'])
 
@@ -604,6 +617,7 @@ def gerar_pdf_etiquetas(caminho_excel, operacao='importacao', arquivo_saida=None
         exporter = str(row[col_exporter]) if col_exporter and pd.notna(row[col_exporter]) else ''
         exporter_addr = str(row[col_exporter_addr]) if col_exporter_addr and pd.notna(row[col_exporter_addr]) else ''
         obs_imp = str(row[col_obs_imp]) if col_obs_imp and pd.notna(row[col_obs_imp]) else ''
+        booking = str(row[col_booking]) if col_booking and pd.notna(row[col_booking]) else ''
         destino = str(row[col_destino]) if col_destino and pd.notna(row[col_destino]) else ''
         observacoes = str(row[col_obs]) if col_obs and pd.notna(row[col_obs]) else ''
 
@@ -614,6 +628,7 @@ def gerar_pdf_etiquetas(caminho_excel, operacao='importacao', arquivo_saida=None
                 'consigneeAddress': consignee_addr,
                 'exporter': exporter,
                 'exporterAddress': exporter_addr,
+                'booking': booking,
                 'observacoesImportantes': obs_imp,
                 'referencia': ref,
                 'volumeAtual': v,
